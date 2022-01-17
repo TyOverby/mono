@@ -1,0 +1,10 @@
+diff --git b/vendor/smimram-ocaml-pandoc/src/dune a/vendor/smimram-ocaml-pandoc/src/dune
+index 961f8ec..b526c2a 100644
+--- b/vendor/smimram-ocaml-pandoc/src/dune
++++ a/vendor/smimram-ocaml-pandoc/src/dune
+@@ -1,4 +1,4 @@
+ (library
+- (name pandoc)
++ (name pandoc_ast)
+  (public_name pandoc_ast)
+  (libraries yojson))

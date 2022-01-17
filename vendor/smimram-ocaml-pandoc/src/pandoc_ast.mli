@@ -47,7 +47,7 @@ and block =
   | UnhandledBlock of Yojson.Basic.t
 
 (** JSON representation of a pandoc file. *)
-type t
+type t = { api_version : int list; meta : Yojson.Basic.t; blocks : block list }
 
 (** {2 Reading and writing} *)
 
