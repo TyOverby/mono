@@ -13,7 +13,7 @@ get hannesm domain-name main
 
 get dbuenzli astring master
 rm -rf test pkg doc
-
+apply_patches dbuenzli astring 
 
 get mirage ocaml-cstruct master
 rm -rf lib_test fuzz ppx_test lwt async
