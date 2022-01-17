@@ -1,0 +1,47 @@
+diff --git b/vendor/pqwy-notty/src-unix/notty_unix.ml a/vendor/pqwy-notty/src-unix/notty_unix.ml
+index 86e9e1e..7c8cb47 100644
+--- b/vendor/pqwy-notty/src-unix/notty_unix.ml
++++ a/vendor/pqwy-notty/src-unix/notty_unix.ml
+@@ -107,12 +107,17 @@ module Term = struct
+       and `Revert cleanup = setup_tcattr ~nosig fd in
+       { fd; flt; ibuf; cleanup }
+ 
++    let feed t = 
++      let n = Unix.read t.fd t.ibuf 0 bsize in
++      Unescape.input t.flt t.ibuf 0 n
++    ;;
++
+     let rec event t =
+       match Unescape.next t.flt with
+       | #Unescape.event | `End as r -> r
+       | `Await ->
+-          let n = Unix.read t.fd t.ibuf 0 bsize in
+-          Unescape.input t.flt t.ibuf 0 n; event t
++          feed t; 
++          event t 
+   end
+ 
+   type t = {
+@@ -166,6 +171,10 @@ module Term = struct
+     | t when t.winched -> t.winched <- false; `Resize (size t)
+     | t -> Unix.(try Input.event t.input with Unix_error (EINTR, _, _) -> event t)
+ 
++  let feed t = 
++    try Input.feed t.input with 
++    Unix.Unix_error (EINTR, _, _) -> ()
++
+   let pending t =
+     not (Tmachine.dead t.trm) &&
+     (t.winched || Unescape.pending t.input.Input.flt)
+diff --git b/vendor/pqwy-notty/src-unix/notty_unix.mli a/vendor/pqwy-notty/src-unix/notty_unix.mli
+index b1f5f83..89a4a79 100644
+--- b/vendor/pqwy-notty/src-unix/notty_unix.mli
++++ a/vendor/pqwy-notty/src-unix/notty_unix.mli
+@@ -93,6 +93,7 @@ module Term : sig
+       return. Use {{!pending}[pending]} to detect when the next call would not
+       block. *)
+ 
++  val feed : t -> unit
+   val pending : t -> bool
+   (** [pending t] is [true] if the next call to {{!event}[event]} would not
+       block and the terminal has not yet been released. *)
