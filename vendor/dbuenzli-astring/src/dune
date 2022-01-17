@@ -8,4 +8,5 @@
     astring_base
     astring_unsafe
     astring_escape
-    astring_sub))
+    astring_sub)
+  (flags (:standard -w -27-39-6-32)))

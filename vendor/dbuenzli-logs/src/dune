@@ -1,10 +1,12 @@
 (library
   (name logs)
   (public_name logs)
-  (modules logs))
+  (modules logs)
+  (flags (:standard -w -27-39-6-32)))
 
 (library
   (name logs_fmt)
   (public_name logs.fmt)
   (libraries logs fmt)
-  (modules logs_fmt))
+  (modules logs_fmt)
+  (flags (:standard -w -27-39-6-32)))

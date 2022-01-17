@@ -138,7 +138,7 @@ let unescaped_len ~ocaml s =    (* derives length and checks syntax validity *)
         then None (* invalid escape *)
         else loop (i + 1) (l + 1)
     | ('b' | 't' | 'n' | 'r' | '"' | '\'') when ocaml -> loop (i + 1) (l + 1)
-    | _c -> None (* invalid escape *)
+    | c -> None (* invalid escape *)
   in
   loop 0 0
 
@@ -168,7 +168,7 @@ let _unescape ~ocaml s = match unescaped_len ~ocaml s with
       | 'r' -> bytes_unsafe_set b k '\r'; loop (i + 1) (k + 1)
       | '"' -> bytes_unsafe_set b k '\"'; loop (i + 1) (k + 1)
       | '\'' -> bytes_unsafe_set b k '\''; loop (i + 1) (k + 1)
-      | _c -> assert false (* because of unescaped_len  *)
+      | c -> assert false (* because of unescaped_len  *)
     in
     loop 0 0
 

@@ -203,7 +203,7 @@ let pp_header ppf (l, h) = match h with
 let pp_exec_header =
   let x = match Array.length Sys.argv with
   | 0 -> Filename.basename Sys.executable_name
-  | _n -> Filename.basename Sys.argv.(0)
+  | n -> Filename.basename Sys.argv.(0)
   in
   let pf = Format.fprintf in
   let pp_header ppf (l, h) =
@@ -219,9 +219,9 @@ let format_reporter
     ?(app = Format.std_formatter)
     ?(dst = Format.err_formatter) ()
   =
-  let report _src level ~over k msgf =
+  let report src level ~over k msgf =
     let k _ = over (); k () in
-    msgf @@ fun ?header ?tags:_ fmt ->
+    msgf @@ fun ?header ?tags fmt ->
     let ppf = if level = App then app else dst in
     Format.kfprintf k ppf ("%a@[" ^^ fmt ^^ "@]@.") pp_header (level, header)
   in
