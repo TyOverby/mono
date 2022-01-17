@@ -18,24 +18,30 @@
 
 let split_header str =
   match Stringext.split ~max:2 ~on:':' str with
-  | [ x; y ] -> [ x; String.trim y ]
+  | x::y::[] -> [x; String.trim y]
   | x -> x
 
-module Make (IO : S.IO) = struct
+module Make(IO : S.IO) = struct
   open IO
-  module Transfer_IO = Transfer_io.Make (IO)
+
+  module Transfer_IO = Transfer_io.Make(IO)
+
+  let rev _k v = List.rev v
 
   let parse ic =
     (* consume also trailing "^\r\n$" line *)
     let rec parse_headers' headers =
       read_line ic >>= function
-      | Some "" | None -> return headers
-      | Some line -> (
+      |Some "" | None -> return (Header.map rev headers)
+      |Some line -> begin
           match split_header line with
-          | [ hd; tl ] -> parse_headers' (Header.add headers hd tl)
-          | _ -> return headers)
-    in
-    parse_headers' (Header.init ())
+          | [hd;tl] ->
+              let header = String.lowercase_ascii hd in
+              parse_headers' (Header.add headers header tl);
+          | _ -> return headers
+      end
+    in parse_headers' (Header.init ())
 
-  let write headers oc = IO.write oc (Header.to_string headers)
+  let write headers oc =
+    IO.write oc (Header.to_string headers)
 end

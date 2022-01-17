@@ -16,16 +16,20 @@
 
 open Sexplib0.Sexp_conv
 
-type t = [ `Empty | `String of string | `Strings of string list ]
-[@@deriving sexp]
+type t = [
+  | `Empty
+  | `String of string
+  | `Strings of string list
+] [@@deriving sexp]
 
 let empty = `Empty
 
 let is_empty = function
-  | `Empty | `String "" -> true
-  | `String _ -> false
-  | `Strings xs -> (
-      match List.filter (fun s -> s <> "") xs with [] -> true | _ -> false)
+  | `Empty
+  | `String ""
+  | `Strings [] -> true
+  | `String _
+  | `Strings _ -> false
 
 let to_string = function
   | `Empty -> ""
@@ -34,7 +38,7 @@ let to_string = function
 
 let to_string_list = function
   | `Empty -> []
-  | `String s -> [ s ]
+  | `String s -> [s]
   | `Strings sl -> sl
 
 let of_string s = `String s
@@ -49,17 +53,13 @@ let length = function
   | `Empty -> 0L
   | `String s -> Int64.of_int (String.length s)
   | `Strings sl ->
-      sl
-      |> List.fold_left
-           (fun a b -> b |> String.length |> Int64.of_int |> Int64.add a)
-           0L
+    sl
+    |> List.fold_left (fun a b ->
+        b |> String.length |> Int64.of_int |> Int64.add a) 0L
 
 let map f = function
   | `Empty -> `Empty
   | `String s -> `String (f s)
   | `Strings sl -> `Strings (List.map f sl)
-
-let to_form t = Uri.query_of_encoded (to_string t)
-let of_form ?scheme f = Uri.encoded_of_query ?scheme f |> of_string
 
 (* TODO: maybe add a functor here that uses IO.S *)

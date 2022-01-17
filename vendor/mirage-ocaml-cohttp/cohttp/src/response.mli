@@ -16,25 +16,22 @@
 
 (** HTTP/1.1 response handling *)
 
-include S.Response with type t = Http.Response.t
-(** This contains the metadata for a HTTP/1.1 response header, including the
-    {!encoding}, {!headers}, {!version}, {!status} code and whether to {!flush}
-    the connection after every body chunk (useful for server-side events and
-    other long-lived connection protocols). The body is handled by the separate
-    {!S} module type, as it is dependent on the IO implementation.
+(** This contains the metadata for a HTTP/1.1 response header, including
+    the {!encoding}, {!headers}, {!version}, {!status} code and whether to
+    {!flush} the connection after every body chunk (useful for server-side
+    events and other long-lived connection protocols). The body is handled by
+    the separate {!S} module type, as it is dependent on the IO
+    implementation.
 
     The interface exposes a [fieldslib] interface which provides individual
-    accessor functions for each of the records below. It also provides [sexp]
+    accessor functions for each of the records below.  It also provides [sexp]
     serializers to convert to-and-from an {!Core.Std.Sexp.t}. *)
+include S.Response
 
-val has_body : t -> [ `No | `Unknown | `Yes ]
-
-val pp_hum : Format.formatter -> t -> unit
 (** Human-readable output, used by the toplevel printer *)
+val pp_hum : Format.formatter -> t -> unit
 
-module Make (IO : S.IO) : S.Http_io with type t = t and module IO = IO
-[@@deprecated "This functor is not part of the public API."]
-
-module Private : sig
-  module Make (IO : S.IO) : S.Http_io with type t = t and module IO = IO
-end
+(** Functor to construct the IO-specific response handling function *)
+module Make(IO : S.IO) : S.Http_io
+  with type t = t
+   and module IO = IO

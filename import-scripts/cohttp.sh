@@ -27,7 +27,7 @@ get mirage ocaml-ipaddr master
 rm -rf "lib_test"
 
 
-get mirage ocaml-cohttp master
+get mirage ocaml-cohttp a9bb82a16cad32725be56e06267871bebb0d972b
 rm -rf \
   ./http/test \
   ./http/fuzz \

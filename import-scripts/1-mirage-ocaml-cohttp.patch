@@ -1,0 +1,10 @@
+diff --git b/vendor/mirage-ocaml-cohttp/cohttp-async/src/input_channel.mli a/vendor/mirage-ocaml-cohttp/cohttp-async/src/input_channel.mli
+index 1e9f60f..34168ec 100644
+--- b/vendor/mirage-ocaml-cohttp/cohttp-async/src/input_channel.mli
++++ a/vendor/mirage-ocaml-cohttp/cohttp-async/src/input_channel.mli
+@@ -10,4 +10,4 @@ val with_input_buffer : t -> f:(string -> pos:int -> len:int -> 'a * int) -> 'a
+ val is_closed : t -> bool
+ val close : t -> unit Deferred.t
+ val close_finished : t -> unit Deferred.t
+-val to_reader : Core_kernel.Info.t -> t -> Reader.t Deferred.t
++val to_reader : Core.Info.t -> t -> Reader.t Deferred.t
