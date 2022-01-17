@@ -14,7 +14,7 @@ function rev_with_content() {
 
 AFTER=$(rev_with_content)
 
-"$VENDOR_DIR/all.sh"
+"$SCRIPT_DIR/all.sh"
 BEFORE=$(rev_with_content)
 
 
