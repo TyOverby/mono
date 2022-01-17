@@ -1,0 +1,23 @@
+diff --git b/vendor/dbuenzli-logs/dune-project a/vendor/dbuenzli-logs/dune-project
+new file mode 100644
+index 0000000..42c0c16
+--- /dev/null
++++ a/vendor/dbuenzli-logs/dune-project
+@@ -0,0 +1 @@
++(lang dune 1.10)
+diff --git b/vendor/dbuenzli-logs/src/dune a/vendor/dbuenzli-logs/src/dune
+new file mode 100644
+index 0000000..2851453
+--- /dev/null
++++ a/vendor/dbuenzli-logs/src/dune
+@@ -0,0 +1,10 @@
++(library
++  (name logs)
++  (public_name logs)
++  (modules logs))
++
++(library
++  (name logs_fmt)
++  (public_name logs.fmt)
++  (libraries logs fmt)
++  (modules logs_fmt))
