@@ -34,4 +34,5 @@ git checkout -f master
 
 for file in $(ls "$PATCHES_DIR"); do 
   ls "$SCRIPT_DIR" | grep ".patch" | grep "$file" | sort -t '-' -n
+  max=$(ls "import-scripts" | grep ".patch" | grep "virtual" | cut -f 3 -d '-' | sed 's/.patch//' | sort -n | tail -1 || echo '0')
 done
