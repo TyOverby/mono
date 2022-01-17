@@ -21,7 +21,7 @@ mkdir -p "$PATCHES_DIR"
 for dir in $(ls "$VENDOR_DIR" | grep "-"); do 
   patchfile="$PATCHES_DIR/$dir"
   cd "$VENDOR_DIR/$dir"
-  git diff -R "$AFTER" . > "$patchfile"
+  git diff -R "$AFTER" . | tee "$patchfile"
 
   if [ -s "$patchfile" ]; then
     true
