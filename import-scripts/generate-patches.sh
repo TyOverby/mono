@@ -33,5 +33,5 @@ done
 git checkout -f master
 
 for file in $(ls "$PATCHES_DIR"); do 
-  ls "$SCRIPT_DIR" | grep ".patch" | grep "$file" | sort -n
+  ls "$SCRIPT_DIR" | grep ".patch" | grep "$file" | sort -t '-' -n
 done
