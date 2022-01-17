@@ -1,0 +1,28 @@
+diff --git b/vendor/dbuenzli-astring/astring.opam a/vendor/dbuenzli-astring/astring.opam
+new file mode 100644
+index 0000000..ba9f73c
+--- /dev/null
++++ a/vendor/dbuenzli-astring/astring.opam
+@@ -0,0 +1,15 @@
++opam-version: "2.0"
++maintainer: "Daniel Bünzli <daniel.buenzl i@erratique.ch>"
++authors: ["The astring programmers"]
++homepage: "https://erratique.ch/software/astring"
++doc: "https://erratique.ch/software/astring/doc"
++dev-repo: "git+http://erratique.ch/repos/astring.git"
++bug-reports: "https://github.com/dbuenzli/astring/issues"
++tags: [ "string" "org:erratique" ]
++license: "ISC"
++depends: [
++  "ocaml" {>= "4.05.0"}
++  "ocamlfind" {build}
++  "ocamlbuild" {build}
++  "topkg" {build} ]
++build: [[ "ocaml" "pkg/pkg.ml" "build" "--pinned" "%{pinned}%" ]]
+diff --git b/vendor/dbuenzli-astring/src/dune a/vendor/dbuenzli-astring/src/dune
+index cb4603a..c3d8ff9 100644
+--- b/vendor/dbuenzli-astring/src/dune
++++ a/vendor/dbuenzli-astring/src/dune
+@@ -1 +1 @@
+-(library (name astring))
++(library (name astring) (public_name astring))
