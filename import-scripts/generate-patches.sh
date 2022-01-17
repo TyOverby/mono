@@ -23,4 +23,3 @@ for dir in $(ls "$VENDOR_DIR" | grep "-"); do
   git diff "$AFTER" . > "$PATCHES_DIR/$dir"
 done
 
-git checkout "$AFTER"
