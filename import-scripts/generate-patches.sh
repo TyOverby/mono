@@ -9,12 +9,12 @@ PATCHES_DIR="$PROJECT_DIR/_patches"
 function rev_with_content() {
   git add -A  > /dev/null
   git commit -m "_" > /dev/null
-  git rev-parse HEAD
+  git log -1 --pretty=format:%H
 }
 
 AFTER=$(rev_with_content)
 
-"$SCRIPT_DIR/all.sh"
+"$SCRIPT_DIR/all.sh" > /dev/null
 BEFORE=$(rev_with_content)
 
 rm -rf "$PATCHES_DIR"
@@ -25,4 +25,4 @@ for dir in $(ls "$VENDOR_DIR" | grep "-"); do
   git diff "$BEFORE" "$AFTER" . > "$PATCHES_DIR/$dir"
 done
 
-git checkout "$AFTER"
+#git checkout "$AFTER"
