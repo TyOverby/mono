@@ -31,7 +31,7 @@ for dir in $(ls "$VENDOR_DIR" | grep "-"); do
 done
 
 for file in $(ls "$PATCHES_DIR"); do 
-  max=$(ls "$SCRIPT_DIR" | grep ".patch" | grep "$file" | cut -f 3 -d '-' | sed 's/.patch//' | sort -n | tail -1 || echo '0')
+  max=$(ls "$SCRIPT_DIR" | grep ".patch" | grep "$file" | cut -f 1 -d '-' | sort -n | tail -1 || echo '0')
   next=$(($max + 1))
-  mv "$PATCHES_DIR/$file" "$SCRIPT_DIR/$file-$next.patch"
+  mv "$PATCHES_DIR/$file" "$SCRIPT_DIR/$next-$file.patch"
 done
