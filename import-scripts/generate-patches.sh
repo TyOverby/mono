@@ -23,7 +23,7 @@ for dir in $(ls "$VENDOR_DIR" | grep "-"); do
   cd "$VENDOR_DIR/$dir"
   git diff -R "$AFTER" . > "$patchfile"
 
-  if [ -s "$patchfile" ] then
+  if [ -s "$patchfile" ]; then
     echo "$dir has patches"
   fi
 done
