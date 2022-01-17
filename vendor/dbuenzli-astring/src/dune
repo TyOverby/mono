@@ -1,11 +1,11 @@
-(library 
-  (name astring) 
+(library
+  (name astring)
   (public_name astring)
-  (modules 
-    astring 
-    astring_string 
-    astring_char 
-    astring_base 
+  (modules
+    astring
+    astring_string
+    astring_char
+    astring_base
     astring_unsafe
     astring_escape
     astring_sub))

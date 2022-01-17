@@ -11,8 +11,13 @@ rm -rf tests src/conduit-lwt-unix src/conduit-lwt src/conduit-mirage
 
 get hannesm domain-name main
 
+get dbuenzli logs master
+rm -rf test pkg doc
+mv opam logs.opam
+
 get dbuenzli astring master
 rm -rf test pkg doc
+mv opam astring.opam
 apply_patches dbuenzli astring 
 
 get mirage ocaml-cstruct master
