@@ -25,7 +25,13 @@ for dir in $(ls "$VENDOR_DIR" | grep "-"); do
 
   if [ -s "$patchfile" ]; then
     echo "$dir has patches"
+  else 
+    rm "$patchfile"
   fi
 done
 
 git checkout -f master
+
+for file in $(ls "$PATHES_DIR"); do 
+  echo $file
+done
