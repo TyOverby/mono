@@ -22,7 +22,7 @@ for dir in $(ls "$VENDOR_DIR" | grep "-"); do
   echo "looking at $dir"
   patchfile="$PATCHES_DIR/$dir"
   cd "$VENDOR_DIR/$dir"
-  git diff -R "$AFTER" . | tee "$patchfile"
+  git diff -R "$AFTER" . > "$patchfile"
 
   if [ -s "$patchfile" ]; then
     true
