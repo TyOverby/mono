@@ -1,0 +1,11 @@
+diff --git b/vendor/dbuenzli-jsonm/src/dune a/vendor/dbuenzli-jsonm/src/dune
+index eb090b2..5604c40 100644
+--- b/vendor/dbuenzli-jsonm/src/dune
++++ a/vendor/dbuenzli-jsonm/src/dune
+@@ -1 +1,5 @@
+-(library (name jsonm) (public_name jsonm))
++(library
++  (name jsonm)
++  (public_name jsonm)
++  (libraries uutf)
++  (flags (:standard -w -27-39-6-32)))

@@ -428,8 +428,8 @@ module Client = struct
       uri
   ;;
 
-  module Request_ = Cohttp_async.Io.Request
-  module Response_ = Cohttp_async.Io.Response
+  module Request_ = Cohttp.Request.Make (Cohttp_async.Io)
+  module Response_ = Cohttp.Response.Make (Cohttp_async.Io)
 
   let read_websocket_response (request : Request.t) reader =
     match%map Response_.read reader with

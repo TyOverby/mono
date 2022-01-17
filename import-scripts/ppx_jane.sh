@@ -26,6 +26,7 @@ get janestreet ppx_fixed_literal master
 get janestreet ppx_expect master
 get janestreet ppx_disable_unused_warnings master
 get janestreet ppx_bin_prot master
+get janestreet bin_prot master
 get janestreet base_quickcheck master
 get janestreet typerep master
 get janestreet sexplib master

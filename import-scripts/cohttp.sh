@@ -40,6 +40,7 @@ rm -rf \
   ./cohttp_async_test \
   ./cohttp/test \
   ./cohttp-async/test \
+  ./cohttp-async/bin \
   ./bench \
   ./cohttp-lwt-jsoo \
   ./cohttp-lwt \
