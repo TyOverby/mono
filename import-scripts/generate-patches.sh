@@ -19,6 +19,7 @@ AFTER=$(rev_with_content)
 rm -rf "$PATCHES_DIR"
 mkdir -p "$PATCHES_DIR"
 for dir in $(ls "$VENDOR_DIR" | grep "-"); do 
+  echo "looking at $dir"
   patchfile="$PATCHES_DIR/$dir"
   cd "$VENDOR_DIR/$dir"
   git diff -R "$AFTER" . | tee "$patchfile"
