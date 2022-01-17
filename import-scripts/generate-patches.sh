@@ -19,7 +19,13 @@ AFTER=$(rev_with_content)
 rm -rf "$PATCHES_DIR"
 mkdir -p "$PATCHES_DIR"
 for dir in $(ls "$VENDOR_DIR" | grep "-"); do 
+  patchfile="$PATCHES_DIR/$dir"
   cd "$VENDOR_DIR/$dir"
-  git diff -R "$AFTER" . > "$PATCHES_DIR/$dir"
+  git diff -R "$AFTER" . > "$patchfile"
+
+  if [ -s "$patchfile" ] then
+    echo "$dir has patches"
+  fi
 done
 
+git checkout master
