@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
+export SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-./bonsai.sh 
-./incremental.sh
+"$SCRIPT_DIR/bonsai.sh"
+"$SCRIPT_DIR/incremental.sh"
 
