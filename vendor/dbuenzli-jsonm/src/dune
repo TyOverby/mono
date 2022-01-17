@@ -1,5 +1,5 @@
-(library 
-  (name jsonm) 
-  (public_name jsonm) 
+(library
+  (name jsonm)
+  (public_name jsonm)
   (libraries uutf)
   (flags (:standard -w -27-39-6-32)))
