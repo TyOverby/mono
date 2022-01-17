@@ -1,0 +1,47 @@
+diff --git b/vendor/janestreet-bonsai/dune-project a/vendor/janestreet-bonsai/dune-project
+index eb10bcb..0636ab6 100644
+--- b/vendor/janestreet-bonsai/dune-project
++++ a/vendor/janestreet-bonsai/dune-project
+@@ -1 +1 @@
+-(lang dune 1.10)
+\ No newline at end of file
++(lang dune 1.11)
+diff --git b/vendor/janestreet-bonsai/test/dune a/vendor/janestreet-bonsai/test/dune
+index bc0d18b..85d9fca 100644
+--- b/vendor/janestreet-bonsai/test/dune
++++ a/vendor/janestreet-bonsai/test/dune
+@@ -1,4 +1,5 @@
+ (library (name bonsai_test) (public_name bonsai.test)
++         (inline_tests)
+  (libraries bonsai bonsai_extra core_kernel.composition_infix core
+   expect_test_helpers_core patdiff.expect_test_patdiff incr_map re)
+- (preprocess (pps ppx_jane ppx_pattern_bind)))
+\ No newline at end of file
++ (preprocess (pps ppx_jane ppx_pattern_bind)))
+diff --git b/vendor/janestreet-bonsai/web_test/dune a/vendor/janestreet-bonsai/web_test/dune
+index bc6323d..f7cf1c7 100644
+--- b/vendor/janestreet-bonsai/web_test/dune
++++ a/vendor/janestreet-bonsai/web_test/dune
+@@ -1,9 +1,12 @@
+-(library (name bonsai_web_test) (public_name bonsai.web_test)
+- (libraries bonsai_web bonsai_extra core expect_test_helpers_core
++(library 
++  (name bonsai_web_test) 
++  (public_name bonsai.web_test)
++  (inline_tests (modes js)) 
++  (libraries bonsai_web bonsai_extra core expect_test_helpers_core
+   patdiff.expect_test_patdiff bonsai_test incr_map
+   virtual_dom.vdom_test_helpers bonsai_web_ui_drag_and_drop
+   bonsai_web_ui_element_size_hooks)
+- (preprocess (pps ppx_jane ppx_pattern_bind)))
++  (preprocess (pps ppx_jane ppx_pattern_bind)))
+ 
+ (rule (targets test_legacy_bonsai.ml) (deps ../test/test_legacy_bonsai.ml)
+  (action (bash "cp %{deps} %{targets}")))
+@@ -19,4 +22,4 @@
+ 
+ (alias (name DEFAULT)
+  (deps test_legacy_bonsai.ml test_legacy_bonsai.mli test_proc_bonsai.ml
+-  test_proc_bonsai.mli))
+\ No newline at end of file
++  test_proc_bonsai.mli))

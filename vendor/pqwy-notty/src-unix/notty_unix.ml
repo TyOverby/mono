@@ -107,12 +107,17 @@ module Term = struct
       and `Revert cleanup = setup_tcattr ~nosig fd in
       { fd; flt; ibuf; cleanup }
 
+    let feed t = 
+      let n = Unix.read t.fd t.ibuf 0 bsize in
+      Unescape.input t.flt t.ibuf 0 n
+    ;;
+
     let rec event t =
       match Unescape.next t.flt with
       | #Unescape.event | `End as r -> r
       | `Await ->
-          let n = Unix.read t.fd t.ibuf 0 bsize in
-          Unescape.input t.flt t.ibuf 0 n; event t
+          feed t; 
+          event t 
   end
 
   type t = {
@@ -165,6 +170,10 @@ module Term = struct
     | t when Tmachine.dead t.trm -> `End
     | t when t.winched -> t.winched <- false; `Resize (size t)
     | t -> Unix.(try Input.event t.input with Unix_error (EINTR, _, _) -> event t)
+
+  let feed t = 
+    try Input.feed t.input with 
+    Unix.Unix_error (EINTR, _, _) -> ()
 
   let pending t =
     not (Tmachine.dead t.trm) &&

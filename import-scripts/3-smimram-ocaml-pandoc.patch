@@ -1,0 +1,13 @@
+diff --git b/vendor/smimram-ocaml-pandoc/src/pandoc_ast.mli a/vendor/smimram-ocaml-pandoc/src/pandoc_ast.mli
+index ecb899d..38a610e 100644
+--- b/vendor/smimram-ocaml-pandoc/src/pandoc_ast.mli
++++ a/vendor/smimram-ocaml-pandoc/src/pandoc_ast.mli
+@@ -47,7 +47,7 @@ and block =
+   | UnhandledBlock of Yojson.Basic.t
+ 
+ (** JSON representation of a pandoc file. *)
+-type t
++type t = { api_version : int list; meta : Yojson.Basic.t; blocks : block list }
+ 
+ (** {2 Reading and writing} *)
+ 

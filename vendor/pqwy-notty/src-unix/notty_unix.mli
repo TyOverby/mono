@@ -93,6 +93,7 @@ module Term : sig
       return. Use {{!pending}[pending]} to detect when the next call would not
       block. *)
 
+  val feed : t -> unit
   val pending : t -> bool
   (** [pending t] is [true] if the next call to {{!event}[event]} would not
       block and the terminal has not yet been released. *)
