@@ -28,7 +28,7 @@ let pp_header ~pp_h ppf (l, h) = match l with
 let pp_exec_header =
   let x = match Array.length Sys.argv with
   | 0 -> Filename.basename Sys.executable_name
-  | n -> Filename.basename Sys.argv.(0)
+  | _n -> Filename.basename Sys.argv.(0)
   in
   let pp_h ppf style h = Fmt.pf ppf "%s: [%a] " x Fmt.(styled style string) h in
   pp_header ~pp_h

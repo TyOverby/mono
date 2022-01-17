@@ -49,7 +49,11 @@ function make_switch() {
       pcre \ 
       lambdasoup \
       sedlex \
-      fmt
+      fmt \ 
+      cryptokit \
+      ctypes \
+      ctypes-foreign \
+      ctypes-build
 ) & 
 
 wait
