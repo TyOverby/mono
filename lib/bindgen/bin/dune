@@ -1,0 +1,15 @@
+(executables
+ (names binding blocks)
+ (libraries bindgen core)
+ (preprocess
+  (pps ppx_jane)))
+
+(rule 
+  (target binding.html)
+  (deps binding.exe)
+  (action (bash "./binding.exe > %{target}")))
+
+(rule 
+  (target boxtest.html)
+  (deps blocks.exe style.css arrows.js)
+  (action (bash "./blocks.exe > %{target}")))

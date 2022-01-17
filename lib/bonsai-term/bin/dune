@@ -1,0 +1,5 @@
+(executables
+ (names main)
+ (libraries bonsai_extra bonsai_term notty bignum)
+ (preprocess
+  (pps ppx_jane)))

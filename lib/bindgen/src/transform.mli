@@ -1,0 +1,11 @@
+open! Core
+open Types
+
+val replace_v : Value.t -> from:Name.t -> to_:Name.t -> Value.t
+val replace_c : Computation.t -> from:Name.t -> to_:Name.t -> Computation.t
+
+val organize_bindings
+  :  Binding.t list
+  -> last_body:Computation.t
+  -> point_to:Name.t
+  -> Binding.t list list

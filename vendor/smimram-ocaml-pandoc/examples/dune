@@ -1,0 +1,55 @@
+(executable
+ (name abbreviations)
+ (public_name pandoc-abbreviations)
+ (package pandoc-abbreviations)
+ (libraries pandoc)
+ (modules abbreviations)
+)
+
+(executable
+ (name crossref)
+ (public_name pandoc-crossref)
+ (package pandoc-crossref)
+ (libraries pandoc)
+ (modules crossref)
+)
+
+(executable
+ (name include)
+ (public_name pandoc-include)
+ (package pandoc-include)
+ (libraries pandoc)
+ (modules include)
+)
+
+(executable
+ (name inspect)
+ (public_name pandoc-inspect)
+ (package pandoc-inspect)
+ (libraries pandoc)
+ (modules inspect)
+)
+
+(executable
+ (name pdf2png)
+ (public_name pandoc-pdf2png)
+ (package pandoc-pdf2png)
+ (libraries pandoc)
+ (modules pdf2png)
+)
+
+(executable
+ (name comment)
+ (public_name pandoc-comment)
+ (package pandoc-comment)
+ (libraries pandoc)
+ (modules comment)
+)
+
+(executable
+ (name replace)
+ (public_name pandoc-replace)
+ (package pandoc-replace)
+ (libraries pandoc str)
+ (modules replace)
+)

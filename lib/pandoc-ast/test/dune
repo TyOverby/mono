@@ -1,0 +1,6 @@
+(library
+ (name pandoc_ast_jane_test)
+ (inline_tests)
+ (libraries pandoc_ast_jane core)
+ (preprocess
+  (pps ppx_jane)))

@@ -1,0 +1,5 @@
+(library
+ (name bonsai_term)
+ (libraries bonsai notty.unix notty incr_dom.ui_incr core virtual_dom.ui_effect)
+ (preprocess
+  (pps ppx_jane)))
