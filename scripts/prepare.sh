@@ -42,20 +42,11 @@ function make_switch() {
   opam repo add "janestreet-bleeding-$JS_BLEED_VER" "https://github.com/janestreet/opam-repository.git#cf2164a995a0d0577cd54beef5d2471e1a02f61f"
   opam install -y \
       dune \
-      core \
-      core_kernel \
-      base \
-      ppx_jane \
-      ppx_pattern_bind \
       js_of_ocaml \
       js_of_ocaml-ppx \
-      abstract_algebra \
-      streamable \
-      async_kernel \
       ocaml-embed-file \
       gen_js_api \
-      uri_sexp \
-      gen_js_api
+      pcre
 ) & 
 
 wait

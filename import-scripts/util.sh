@@ -20,6 +20,8 @@ function get() {
   mkdir -p "$dest"
   cd "$dest"
 
+  echo "for $repo" 
+
   if [ -f "$tarball" ]; then
       true
   else

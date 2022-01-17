@@ -1,0 +1,2 @@
+(library (name thread_safe_ivar) (public_name async_unix.thread_safe_ivar)
+ (libraries core core_unix.error_checking_mutex) (preprocess (pps ppx_jane)))

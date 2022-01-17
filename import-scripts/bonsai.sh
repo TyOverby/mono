@@ -12,4 +12,4 @@ rm -rf test tyxml example
 apply_patches janestreet virtual_dom 
 
 get janestreet bonsai master
-rm -rf docs examples/open_source experimental test web_test web_ui bench
+rm -rf docs examples/open_source experimental web_test web_ui bench
