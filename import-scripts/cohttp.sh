@@ -11,6 +11,8 @@ rm -rf tests src/conduit-lwt-unix src/conduit-lwt src/conduit-mirage
 
 get hannesm domain-name main
 
+get dbuenzli jsonm master
+
 get dbuenzli logs master
 rm -rf test pkg doc
 mv opam logs.opam
