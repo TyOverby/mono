@@ -1,0 +1,2 @@
+(library (name test_vdom_keyboard) (libraries vdom_keyboard core)
+ (preprocess (pps ppx_jane js_of_ocaml-ppx)))

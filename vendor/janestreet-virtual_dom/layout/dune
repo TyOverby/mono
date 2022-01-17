@@ -1,0 +1,2 @@
+(library (name vdom_layout) (public_name virtual_dom.layout)
+ (libraries core css_gen virtual_dom) (preprocess (pps ppx_jane)))
