@@ -14,7 +14,7 @@ function rev_with_content() {
 
 AFTER=$(rev_with_content)
 
-"$SCRIPT_DIR/all.sh"
+"$SCRIPT_DIR/all.sh" > /dev/null
 BEFORE=$(rev_with_content)
 
 rm -rf "$PATCHES_DIR"
