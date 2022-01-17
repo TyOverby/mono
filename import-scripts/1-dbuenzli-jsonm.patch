@@ -1,0 +1,18 @@
+diff --git b/vendor/dbuenzli-jsonm/dune-project a/vendor/dbuenzli-jsonm/dune-project
+new file mode 100644
+index 0000000..42c0c16
+--- /dev/null
++++ a/vendor/dbuenzli-jsonm/dune-project
+@@ -0,0 +1 @@
++(lang dune 1.10)
+diff --git b/vendor/dbuenzli-jsonm/src/dune a/vendor/dbuenzli-jsonm/src/dune
+new file mode 100644
+index 0000000..a9266b2
+--- /dev/null
++++ a/vendor/dbuenzli-jsonm/src/dune
+@@ -0,0 +1,5 @@
++(library
++  (name jsonm)
++  (public_name jsonm)
++  (libraries uutf)
++  (flags (:standard -w -27-39-6-32)))
