@@ -30,7 +30,7 @@ for dir in $(ls "$VENDOR_DIR" | grep "-"); do
   fi
 done
 
-git checkout -f master > /dev/null
+git checkout -f master 2> /dev/null
 
 for file in $(ls "$PATCHES_DIR"); do 
   max=$(ls "$SCRIPT_DIR" | grep ".patch" | grep "$file" | cut -f 1 -d '-' | sort -n | tail -1 || echo '0')

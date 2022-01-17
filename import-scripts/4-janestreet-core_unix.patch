@@ -1,0 +1,45 @@
+diff --git b/vendor/janestreet-core_unix/core_unix/src/core_unix_time_stubs.c a/vendor/janestreet-core_unix/core_unix/src/core_unix_time_stubs.c
+index a369b93..fd2f863 100644
+--- b/vendor/janestreet-core_unix/core_unix/src/core_unix_time_stubs.c
++++ a/vendor/janestreet-core_unix/core_unix/src/core_unix_time_stubs.c
+@@ -54,7 +54,7 @@ CAMLprim value caml_clock_getcpuclockid(value v_pid) {
+ 
+   clockid_t clock;
+ 
+-  int ret = clock_getcpuclockid(pid, &clock);
++  int ret = 1;
+ 
+   /*  HEADS UP: error returns are *not* negated here, quite surprisingly. Check the man
+       page. Error codes are positive here. */
+diff --git b/vendor/janestreet-core_unix/linux_ext/src/linux_ext.ml a/vendor/janestreet-core_unix/linux_ext/src/linux_ext.ml
+index b8bdf20..ef9d15b 100644
+--- b/vendor/janestreet-core_unix/linux_ext/src/linux_ext.ml
++++ a/vendor/janestreet-core_unix/linux_ext/src/linux_ext.ml
+@@ -192,15 +192,15 @@ let cpu_list_of_file_exn file =
+   | Some cpu_list -> cpu_list_of_string_exn cpu_list
+ ;;
+ 
+-let isolated_cpus =
++let _isolated_cpus =
+   Memo.unit (fun () -> cpu_list_of_file_exn "/sys/devices/system/cpu/isolated")
+ ;;
+ 
+-let online_cpus =
++let _online_cpus =
+   Memo.unit (fun () -> cpu_list_of_file_exn "/sys/devices/system/cpu/online")
+ ;;
+ 
+-let cpus_local_to_nic ~ifname =
++let _cpus_local_to_nic ~ifname =
+   cpu_list_of_file_exn (sprintf "/sys/class/net/%s/device/local_cpulist" ifname)
+ ;;
+ 
+@@ -281,7 +281,7 @@ module Null_toplevel = struct
+     (* let pwait _ ~timeout:_ _      = assert false *)
+   end
+ end
+-module _ : Linux_ext_intf.S = struct
++module Null : Linux_ext_intf.S = struct
+   type nonrec tcp_bool_option = tcp_bool_option =
+       TCP_CORK | TCP_QUICKACK
+   [@@deriving sexp, bin_io]
