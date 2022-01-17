@@ -32,6 +32,6 @@ done
 
 git checkout -f master
 
-for file in $(ls "$PATHES_DIR"); do 
+for file in $(ls "$PATCHES_DIR"); do 
   echo $file
 done
