@@ -28,4 +28,4 @@ for dir in $(ls "$VENDOR_DIR" | grep "-"); do
   fi
 done
 
-git checkout master
+git checkout -f master
