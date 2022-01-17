@@ -24,13 +24,11 @@ for dir in $(ls "$VENDOR_DIR" | grep "-"); do
   git diff -R "$AFTER" . > "$patchfile"
 
   if [ -s "$patchfile" ]; then
-    echo "$dir has patches"
+    true
   else 
     rm "$patchfile"
   fi
 done
-
-git checkout -f master
 
 for file in $(ls "$PATCHES_DIR"); do 
   max=$(ls "$SCRIPT_DIR" | grep ".patch" | grep "$file" | cut -f 3 -d '-' | sed 's/.patch//' | sort -n | tail -1 || echo '0')
