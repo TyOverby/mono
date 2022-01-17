@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-
-export SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-source "$SCRIPT_DIR/util.sh"
+source "$(git rev-parse --show-toplevel)/import-scripts/util.sh"
 
 get janestreet incr_dom master
 rm -rf example testing
@@ -14,4 +12,4 @@ rm -rf test tyxml example
 apply_patches janestreet virtual_dom 
 
 get janestreet bonsai master
-rm -rf bindings docs examples experimental extra test web web_test web_ui bench
+rm -rf docs examples/open_source experimental test web_test web_ui bench

@@ -21,7 +21,7 @@ function get() {
   cd "$dest"
 
   if [ -f "$tarball" ]; then
-      echo "found tarball in cache for $user/$repo@$rev"
+      true
   else
       curl -Ls "https://github.com/$user/$repo/archive/$rev.tar.gz" > "$tarball"
   fi
