@@ -1,7 +1,0 @@
-diff --git b/vendor/dbuenzli-astring/src/dune a/vendor/dbuenzli-astring/src/dune
-new file mode 100644
-index 0000000..cb4603a
---- /dev/null
-+++ a/vendor/dbuenzli-astring/src/dune
-@@ -0,0 +1 @@
-+(library (name astring))
