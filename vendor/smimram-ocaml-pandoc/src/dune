@@ -1,4 +1,4 @@
 (library
- (name pandoc)
+ (name pandoc_ast)
  (public_name pandoc_ast)
  (libraries yojson))

@@ -8,6 +8,7 @@ export SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null &&
 "$SCRIPT_DIR/ppx_jane.sh" &
 "$SCRIPT_DIR/cohttp.sh" &
 "$SCRIPT_DIR/pandoc.sh" &
+"$SCRIPT_DIR/notty.sh" &
 
 wait
 
