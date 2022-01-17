@@ -37,3 +37,5 @@ for file in $(ls "$PATCHES_DIR"); do
   next=$(($max + 1))
   mv "$PATCHES_DIR/$file" "$SCRIPT_DIR/$next-$file.patch"
 done
+
+rmdir "$PATCHES_DIR"

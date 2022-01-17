@@ -6,3 +6,4 @@ get janestreet async_kernel master
 get janestreet async_rpc_kernel master
 get janestreet async_unix master
 get janestreet async master
+get janestreet async_js master

@@ -1,15 +1,13 @@
 #!/usr/bin/env bash
 source "$(git rev-parse --show-toplevel)/import-scripts/util.sh"
 
-get janestreet incr_dom master
-rm -rf example testing
+get janestreet ocaml-embed-file master
 
-get janestreet async_js master
-rm -rf test example-server example-client
+get janestreet incr_dom master
+rm -rf example
 
 get janestreet virtual_dom master
-rm -rf test tyxml example
-apply_patches janestreet virtual_dom 
+rm -rf tyxml 
 
 get janestreet bonsai master
-rm -rf docs examples/open_source experimental web_test web_ui bench
+rm -rf experimental

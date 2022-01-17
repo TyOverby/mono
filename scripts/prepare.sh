@@ -46,7 +46,10 @@ function make_switch() {
       js_of_ocaml-ppx \
       ocaml-embed-file \
       gen_js_api \
-      pcre
+      pcre \ 
+      lambdasoup \
+      sedlex \
+      fmt
 ) & 
 
 wait

@@ -1,0 +1,3 @@
+(executables (names embed_file) (public_names ocaml-embed-file)
+ (libraries core_unix.command_unix core embed_file_lib)
+ (preprocess (pps ppx_jane)))
