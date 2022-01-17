@@ -10,7 +10,10 @@ get mirage ocaml-conduit master
 rm -rf tests src/conduit-lwt-unix src/conduit-lwt src/conduit-mirage
 
 get hannesm domain-name main
+
 get dbuenzli astring master
+rm -rf test pkg doc
+
 
 get mirage ocaml-cstruct master
 rm -rf lib_test fuzz ppx_test lwt async
