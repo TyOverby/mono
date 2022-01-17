@@ -11,6 +11,7 @@ rm -rf test example-server example-client
 
 get janestreet virtual_dom master
 rm -rf test tyxml example
+apply_patches janestreet virtual_dom 
 
 get janestreet bonsai master
 rm -rf bindings docs examples experimental extra test web web_test web_ui bench
