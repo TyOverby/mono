@@ -20,6 +20,6 @@ rm -rf "$PATCHES_DIR"
 mkdir -p "$PATCHES_DIR"
 for dir in $(ls "$VENDOR_DIR" | grep "-"); do 
   cd "$VENDOR_DIR/$dir"
-  git diff "$AFTER" . > "$PATCHES_DIR/$dir"
+  git diff -R "$AFTER" . > "$PATCHES_DIR/$dir"
 done
 
