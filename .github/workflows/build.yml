@@ -22,6 +22,9 @@ jobs:
         kind:
           - vendored
             #- nightly
+        build_cache:
+          - enabled
+          - disabled
 
     runs-on: ${{ matrix.os }}
 
@@ -40,7 +43,7 @@ jobs:
             _opam 
             _tools
             _build
-          key: ${{ runner.os }}-${{ matrix.kind }}
+          key: ${{ runner.os }}-${{ matrix.kind }}-${{ matrix.build_cache }}
 
       - name: Use OCaml ${{ matrix.ocaml-compiler }}
         uses: ocaml/setup-ocaml@v2
@@ -51,5 +54,12 @@ jobs:
         if: matrix.kind == 'nightly'
         run: ./import-scripts/all.sh
 
-      - run: ./scripts/prepare.sh
-      - run: opam exec dune build @lib/all
+      - name: Prepare
+        run: ./scripts/prepare.sh
+
+      - name: Clean Build
+        if: matrix.build_cache == 'disabled'
+        run: opam exec -- dune clean
+
+      - name: Build
+        run: opam exec -- dune build --display short @lib/all
