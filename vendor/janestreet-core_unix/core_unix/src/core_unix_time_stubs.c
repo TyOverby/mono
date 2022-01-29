@@ -54,7 +54,7 @@ CAMLprim value caml_clock_getcpuclockid(value v_pid) {
 
   clockid_t clock;
 
-  int ret = clock_getcpuclockid(pid, &clock);
+  int ret = 1;
 
   /*  HEADS UP: error returns are *not* negated here, quite surprisingly. Check the man
       page. Error codes are positive here. */
