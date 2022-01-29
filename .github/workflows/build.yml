@@ -30,7 +30,10 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install openssl@3
 
-      - name: Cache opam
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Cache things
         uses: actions/cache@v2
         with:
           path: |
@@ -39,18 +42,14 @@ jobs:
             _build
           key: ${{ runner.os }}-${{ matrix.kind }}
 
-      - name: Checkout code
-        uses: actions/checkout@v2
-
       - name: Use OCaml ${{ matrix.ocaml-compiler }}
         uses: ocaml/setup-ocaml@v2
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
-      - name: Correct OpenSSL Version on OSX
+      - name: Pull Nightly Packages
         if: matrix.kind == 'nightly'
         run: ./import-scripts/all.sh
 
       - run: ./scripts/prepare.sh
-      - run: ./scripts/env.sh | sed 's/;.*//' >> $GITHUB_ENV
-      - run: dune build @lib/all
+      - run: opam exec dune build @lib/all
