@@ -11,5 +11,5 @@ get janestreet virtual_dom master
 rm -rf tyxml 
 
 get janestreet bonsai master
-apply_patches janestreet bonsai
+#apply_patches janestreet bonsai
 rm -rf experimental
