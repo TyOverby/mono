@@ -66,4 +66,3 @@ jobs:
 
       - name: Build Everything
         run: opam exec -- dune build --display short 
-        continue-on-error: true
