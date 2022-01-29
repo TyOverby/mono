@@ -21,7 +21,7 @@ jobs:
         # - 4.13.x # disabled because we don't support 4.13.x 
         kind:
           - vendored
-            #- nightly
+          - nightly
         build_cache:
           - enabled
           - disabled
@@ -43,7 +43,7 @@ jobs:
             _opam 
             _tools
             _build
-          key: ${{ runner.os }}-${{ matrix.kind }}-${{ matrix.build_cache }}
+          key: ${{ runner.os }}-${{ matrix.kind }}
 
       - name: Use OCaml ${{ matrix.ocaml-compiler }}
         uses: ocaml/setup-ocaml@v2
