@@ -2,3 +2,4 @@
 source "$(git rev-parse --show-toplevel)/import-scripts/util.sh"
 
 get pqwy notty master
+apply_patches pqwy notty

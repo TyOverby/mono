@@ -6,7 +6,7 @@ index 86e9e1e..7c8cb47 100644
        and `Revert cleanup = setup_tcattr ~nosig fd in
        { fd; flt; ibuf; cleanup }
  
-+    let feed t = 
++    let feed t =
 +      let n = Unix.read t.fd t.ibuf 0 bsize in
 +      Unescape.input t.flt t.ibuf 0 n
 +    ;;
@@ -17,8 +17,8 @@ index 86e9e1e..7c8cb47 100644
        | `Await ->
 -          let n = Unix.read t.fd t.ibuf 0 bsize in
 -          Unescape.input t.flt t.ibuf 0 n; event t
-+          feed t; 
-+          event t 
++          feed t;
++          event t
    end
  
    type t = {
@@ -26,8 +26,8 @@ index 86e9e1e..7c8cb47 100644
      | t when t.winched -> t.winched <- false; `Resize (size t)
      | t -> Unix.(try Input.event t.input with Unix_error (EINTR, _, _) -> event t)
  
-+  let feed t = 
-+    try Input.feed t.input with 
++  let feed t =
++    try Input.feed t.input with
 +    Unix.Unix_error (EINTR, _, _) -> ()
 +
    let pending t =
