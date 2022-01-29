@@ -52,4 +52,5 @@ jobs:
         run: ./import-scripts/all.sh
 
       - run: ./scripts/prepare.sh
-      - run: eval $(./scripts/env.sh); dune build @lib/all
+      - run: ./scripts/env.sh >> $GITHUB_ENV
+      - run: dune build @lib/all
