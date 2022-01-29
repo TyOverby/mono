@@ -61,5 +61,9 @@ jobs:
         if: matrix.build_cache == 'no_build_cache'
         run: opam exec -- dune clean
 
-      - name: Build
+      - name: Build My Things
         run: opam exec -- dune build --display short @lib/all
+
+      - name: Build Everything
+        run: opam exec -- dune build --display short 
+        continue-on-error: true
