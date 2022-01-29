@@ -1,4 +1,3 @@
 (library (name async_js) (public_name async_js)
  (libraries js_of_ocaml async_kernel async_rpc_kernel uri uri-sexp)
- (flags (:standard -w -27-39-6-32-deprecated))
  (preprocess (pps ppx_jane js_of_ocaml-ppx)))
