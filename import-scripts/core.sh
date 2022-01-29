@@ -13,7 +13,7 @@ get janestreet core_kernel master
 get janestreet core_unix master
 get janestreet spawn master
 get janestreet ocaml_intrinsics master
-# apply_patches janestreet core_unix
+apply_patches janestreet core_unix
 
 # misc
 get janestreet abstract_algebra master
