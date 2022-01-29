@@ -192,15 +192,15 @@ let cpu_list_of_file_exn file =
   | Some cpu_list -> cpu_list_of_string_exn cpu_list
 ;;
 
-let _isolated_cpus =
+let isolated_cpus =
   Memo.unit (fun () -> cpu_list_of_file_exn "/sys/devices/system/cpu/isolated")
 ;;
 
-let _online_cpus =
+let online_cpus =
   Memo.unit (fun () -> cpu_list_of_file_exn "/sys/devices/system/cpu/online")
 ;;
 
-let _cpus_local_to_nic ~ifname =
+let cpus_local_to_nic ~ifname =
   cpu_list_of_file_exn (sprintf "/sys/class/net/%s/device/local_cpulist" ifname)
 ;;
 

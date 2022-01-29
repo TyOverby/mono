@@ -2,6 +2,7 @@
  (libraries core_kernel.bounded_int_table core core_thread filename_unix
   time_ns_unix)
  (c_names linux_ext_stubs) (preprocessor_deps config.h)
+ (flags (:standard -w -27-39-6-32-deprecated))
  (preprocess (pps ppx_jane)))
 
 (rule (targets config.h) (deps)
