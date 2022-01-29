@@ -192,15 +192,15 @@ let cpu_list_of_file_exn file =
   | Some cpu_list -> cpu_list_of_string_exn cpu_list
 ;;
 
-let _isolated_cpus =
+let isolated_cpus =
   Memo.unit (fun () -> cpu_list_of_file_exn "/sys/devices/system/cpu/isolated")
 ;;
 
-let _online_cpus =
+let online_cpus =
   Memo.unit (fun () -> cpu_list_of_file_exn "/sys/devices/system/cpu/online")
 ;;
 
-let _cpus_local_to_nic ~ifname =
+let cpus_local_to_nic ~ifname =
   cpu_list_of_file_exn (sprintf "/sys/class/net/%s/device/local_cpulist" ifname)
 ;;
 
@@ -281,6 +281,7 @@ module Null_toplevel = struct
     (* let pwait _ ~timeout:_ _      = assert false *)
   end
 end
+
 module Null : Linux_ext_intf.S = struct
   type nonrec tcp_bool_option = tcp_bool_option =
       TCP_CORK | TCP_QUICKACK
@@ -408,6 +409,9 @@ module Null : Linux_ext_intf.S = struct
 
   include Null_toplevel
 end
+module _ = Null
+(* We leave a dummy reference to Null since it may trigger warning 60 (unused-module)
+   depending on the conditional compilation below. *)
 
 [%%import "config.h"]
 

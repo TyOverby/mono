@@ -24,7 +24,7 @@ function make_switch() {
     if [ -d "$root/_opam" ]; then
         true
     else 
-        opam switch create "$root" "ocaml-base-compiler.$VER"
+        opam switch create "$root" "ocaml-base-compiler.$VER" --no-install
     fi
 }
 
@@ -40,20 +40,7 @@ function make_switch() {
   cd "$PROJECT_DIR"
   eval $(opam env)
   opam repo add "janestreet-bleeding-$JS_BLEED_VER" "https://github.com/janestreet/opam-repository.git#cf2164a995a0d0577cd54beef5d2471e1a02f61f"
-  opam install -y \
-      dune \
-      js_of_ocaml \
-      js_of_ocaml-ppx \
-      ocaml-embed-file \
-      gen_js_api \
-      pcre \ 
-      lambdasoup \
-      sedlex \
-      fmt \ 
-      cryptokit \
-      ctypes \
-      ctypes-foreign \
-      ctypes-build
+  opam install -y dune re js_of_ocaml js_of_ocaml-ppx gen_js_api pcre lambdasoup sedlex fmt cryptokit ctypes ctypes-foreign ctypes-build angstrom stringext
 ) & 
 
 wait

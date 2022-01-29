@@ -8,9 +8,12 @@ get janestreet bignum master
 get janestreet zarith_stubs_js master
 
 get janestreet core master
+get janestreet jane-street-headers master
 get janestreet core_kernel master
 get janestreet core_unix master
-apply_patches janestreet core_unix
+get janestreet spawn master
+get janestreet ocaml_intrinsics master
+# apply_patches janestreet core_unix
 
 # misc
 get janestreet abstract_algebra master

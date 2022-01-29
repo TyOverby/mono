@@ -29,7 +29,6 @@ get janestreet ppx_bin_prot master
 get janestreet bin_prot master
 get janestreet base_quickcheck master
 get janestreet typerep master
-get janestreet sexplib master
 get janestreet bin_prot master
 get janestreet splittable_random master
 get janestreet ppx_sexp_value master
@@ -55,3 +54,8 @@ get janestreet ppx_sexp_conv master
 get janestreet ppx_here master
 get janestreet ppx_compare master
 get janestreet ppx_cold master
+get janestreet ppx_ignore_instrumentation master
+get janestreet ppx_pipebang master
+
+get janestreet sexplib master
+rm -rf num
