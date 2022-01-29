@@ -19,6 +19,9 @@ jobs:
         ocaml-compiler:
           - 4.12.x
         # - 4.13.x # disabled because we don't support 4.13.x 
+        kind:
+          - vendored
+            #- nightly
 
     runs-on: ${{ matrix.os }}
 
@@ -27,6 +30,15 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install openssl@3
 
+      - name: Cache opam
+        uses: actions/cache@v2
+        with:
+          path: |
+            _opam 
+            _tools
+            _build
+          key: ${{ runner.os }}-${{ matrix.kind }}
+
       - name: Checkout code
         uses: actions/checkout@v2
 
@@ -34,10 +46,10 @@ jobs:
         uses: ocaml/setup-ocaml@v2
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
-            #          opam-repositories: |
-            #default: https://github.com/ocaml/opam-repository.git
-            #janestreet-bleeding: https://ocaml.janestreet.com/opam-repository
-            #janestreet-bleeding-external: https://github.com/janestreet/opam-repository.git#external-packages
+
+      - name: Correct OpenSSL Version on OSX
+        if: matrix.kind == 'nightly'
+        run: ./import-scripts/all.sh
+
       - run: ./scripts/prepare.sh
-        #- run: opam exec -- dune build
-        #- run: opam exec -- dune runtest
+      - run: eval $(./scripts/env.sh); dune build @lib/all
