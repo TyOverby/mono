@@ -11,6 +11,7 @@ get janestreet async_unix master
 get janestreet async master
 get janestreet async_kernel master
 get janestreet async_js master
+apply_patches janestreet async_js
 
 get janestreet async_ssl master
 rm bindings/ctypes_foreign_flat.ml
