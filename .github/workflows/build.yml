@@ -19,12 +19,12 @@ jobs:
         ocaml-compiler:
           - 4.12.x
         # - 4.13.x # disabled because we don't support 4.13.x 
-        kind:
-          - vendored
-          - nightly
+        refresh_packages:
+          - vendored_packages
+          - nightly_packages
         build_cache:
-          - enabled
-          - disabled
+          - use_build_cache
+          - no_build_cache
 
     runs-on: ${{ matrix.os }}
 
@@ -43,7 +43,7 @@ jobs:
             _opam 
             _tools
             _build
-          key: ${{ runner.os }}-${{ matrix.kind }}
+          key: ${{ runner.os }}-${{ matrix.refresh_packages}}
 
       - name: Use OCaml ${{ matrix.ocaml-compiler }}
         uses: ocaml/setup-ocaml@v2
@@ -51,14 +51,14 @@ jobs:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
       - name: Pull Nightly Packages
-        if: matrix.kind == 'nightly'
+        if: matrix.refresh_packages == 'nightly_packages'
         run: ./import-scripts/all.sh
 
       - name: Prepare
         run: ./scripts/prepare.sh
 
       - name: Clean Build
-        if: matrix.build_cache == 'disabled'
+        if: matrix.build_cache == 'no_build_cache'
         run: opam exec -- dune clean
 
       - name: Build

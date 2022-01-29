@@ -5,6 +5,8 @@ get janestreet base master
 apply_patches janestreet base
 
 get janestreet bignum master
+apply_patches janestreet bignum
+
 get janestreet zarith_stubs_js master
 
 get janestreet core master
