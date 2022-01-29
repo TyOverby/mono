@@ -1,0 +1,15 @@
+diff --git b/vendor/janestreet-core_unix/linux_ext/src/dune a/vendor/janestreet-core_unix/linux_ext/src/dune
+index 060cde0..859df9a 100644
+--- b/vendor/janestreet-core_unix/linux_ext/src/dune
++++ a/vendor/janestreet-core_unix/linux_ext/src/dune
+@@ -2,7 +2,8 @@
+  (libraries core_kernel.bounded_int_table core core_thread filename_unix
+   time_ns_unix)
+  (c_names linux_ext_stubs) (preprocessor_deps config.h)
++ (flags (:standard -w -27-39-6-32-deprecated))
+  (preprocess (pps ppx_jane)))
+ 
+ (rule (targets config.h) (deps)
+- (action (bash "cp %{lib:jst-config:config.h} .")))
+\ No newline at end of file
++ (action (bash "cp %{lib:jst-config:config.h} .")))
