@@ -1,0 +1,5 @@
+(executables
+ (names main)
+ (libraries furby core)
+ (preprocess
+  (pps ppx_jane)))

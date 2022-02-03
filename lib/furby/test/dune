@@ -1,0 +1,6 @@
+(library
+ (name furby_test)
+ (inline_tests)
+ (libraries furby core)
+ (preprocess
+  (pps ppx_jane)))

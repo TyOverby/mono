@@ -1,0 +1,5 @@
+(library
+ (name furby)
+ (libraries core)
+ (preprocess
+  (pps ppx_jane)))
