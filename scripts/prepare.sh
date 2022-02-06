@@ -13,6 +13,9 @@ function make_switch() {
     mkdir -p "$root"
     cd "$root"
 
+    echo "making switch in ${pwd}"
+    ls
+
     if [ -d "./_opam" ]; then
         if cat "./_opam/.opam-switch/switch-config" | grep "$VER" > /dev/null; then 
             echo "opam switch for $VER already created"
@@ -29,17 +32,12 @@ function make_switch() {
     fi
 }
 
-(
-  make_switch "$TOOLS_DIR"
-  eval $(opam env)
-  opam install -y ocamlformat ocamlformat-rpc ocaml-lsp-server
-) & 
+make_switch "$TOOLS_DIR"
+eval $(opam env)
+opam install -y ocamlformat ocamlformat-rpc ocaml-lsp-server
 
-(
-  make_switch "$PROJECT_DIR"
-  eval $(opam env)
-  opam repo add "janestreet-bleeding-$JS_BLEED_VER" "https://github.com/janestreet/opam-repository.git#cf2164a995a0d0577cd54beef5d2471e1a02f61f"
-  opam install -y dune re js_of_ocaml js_of_ocaml-ppx gen_js_api pcre lambdasoup sedlex fmt cryptokit ctypes ctypes-foreign ctypes-build angstrom stringext
-) & 
+make_switch "$PROJECT_DIR"
+eval $(opam env)
+opam repo add "janestreet-bleeding-$JS_BLEED_VER" "https://github.com/janestreet/opam-repository.git#cf2164a995a0d0577cd54beef5d2471e1a02f61f"
+opam install -y dune re js_of_ocaml js_of_ocaml-ppx gen_js_api pcre lambdasoup sedlex fmt cryptokit ctypes ctypes-foreign ctypes-build angstrom stringext
 
-wait
