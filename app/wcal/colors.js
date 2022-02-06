@@ -264,3 +264,16 @@ colors = {
     900: '#881337',
   }
 };
+
+
+/*
+console.log(":root {");
+for (let color in colors) {
+  for (let i in colors[color]) {
+    let gap = (i == 50) ? " " : "";
+    console.log(`  --${color}-${i}${gap}: ${colors[color][i]};`);
+  }
+  console.log("");
+}
+console.log("}");
+*/
