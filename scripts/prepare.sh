@@ -13,7 +13,7 @@ function make_switch() {
     mkdir -p "$root"
     cd "$root"
 
-    echo "making switch in ${pwd}"
+    echo "making switch in $(pwd)"
     ls
 
     if [ -d "./_opam" ]; then
