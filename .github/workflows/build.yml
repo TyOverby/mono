@@ -41,7 +41,6 @@ jobs:
         with:
           path: |
             _opam 
-            _tools
             _build
           key: ${{ runner.os }}-${{ matrix.refresh_packages}}
 
@@ -55,7 +54,7 @@ jobs:
         run: ./import-scripts/all.sh
 
       - name: Prepare
-        run: ./scripts/prepare.sh
+        run: ./scripts/prepare_ci.sh
 
       - name: Clean Build
         if: matrix.build_cache == 'no_build_cache'
