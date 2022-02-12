@@ -1,0 +1,5 @@
+(executables
+ (names main)
+ (libraries emdee core)
+ (preprocess
+  (pps ppx_jane)))

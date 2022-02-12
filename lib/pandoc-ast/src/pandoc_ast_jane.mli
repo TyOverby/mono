@@ -91,6 +91,7 @@ module rec List_item : sig
   type t
   type details [@@deriving sexp, equal, quickcheck, compare]
 
+  val of_blocks : Block.t list -> details
   val kind : details -> [ `Checked | `Normal | `Unchecked ]
   val reveal : t -> details
   val conceal : details -> t
@@ -153,3 +154,10 @@ val folding_map
   -> t
 
 val iter : ?inline:(Inline.t -> unit) -> ?block:(Block.t -> unit) -> t -> unit
+
+val fold
+  :  init:'acc
+  -> ?inline:('acc -> Inline.t -> 'acc)
+  -> ?block:('acc -> Block.t -> 'acc)
+  -> t
+  -> 'acc

@@ -1,0 +1,6 @@
+(library
+ (name emdee_test)
+ (inline_tests)
+ (libraries emdee core)
+ (preprocess
+  (pps ppx_jane)))

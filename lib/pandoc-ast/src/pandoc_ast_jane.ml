@@ -283,6 +283,14 @@ module More = struct
     in
     ()
   ;;
+
+  let fold ~init ?(inline = fun a _ -> a) ?(block = fun a _ -> a) t =
+    let acc = ref init in
+    let inline e = acc := inline !acc e in
+    let block e = acc := block !acc e in
+    iter ~inline ~block t;
+    !acc
+  ;;
 end
 
 module List_item = struct
@@ -316,6 +324,8 @@ module List_item = struct
     | Normal blocks | No_inline_strings blocks | Unchecked blocks | Checked blocks ->
       blocks
   ;;
+
+  let of_blocks b = Normal b
 
   let reveal (blocks : Block.t list) =
     match blocks with
