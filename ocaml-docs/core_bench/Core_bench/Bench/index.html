@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Bench (core_bench.Core_bench.Bench)</title><link rel="stylesheet" href="../../../odoc.css"/><meta charset="utf-8"/><meta name="generator" content="odoc 2.1.0"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../../highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../index.html">core_bench</a> &#x00BB; <a href="../index.html">Core_bench</a> &#x00BB; Bench</nav><header class="odoc-preamble"><h1>Module <code><span>Core_bench.Bench</span></code></h1><p><code>Core_bench</code> is a micro-benchmarking library for OCaml that can measure execution costs of operations that take 1ns to about 100ms. <code>Core_bench</code> tries to measure execution costs of such short-lived computations precisely while trying to account for delayed GC costs and noise introduced by other activity on the system.</p><p>The easiest way to get started is using an example:</p><pre><code>open! Core
+open Core_bench
+
+let () =
+  Random.self_init ();
+  let x = Random.float 10.0 in
+  let y = Random.float 10.0 in
+  Command.run (Bench.make_command [
+    Bench.Test.create ~name:&quot;Float add&quot; (fun () -&gt;
+      ignore (x +. y));
+    Bench.Test.create ~name:&quot;Float mul&quot; (fun () -&gt;
+      ignore (x *. y));
+    Bench.Test.create ~name:&quot;Float div&quot; (fun () -&gt;
+      ignore (x /. y));
+  ])</code></pre><p>When compiled this gives you an executable:</p><pre>      $ ./z.exe -ascii
+      Estimated testing time 30s (3 benchmarks x 10s). Change using -quota SECS.
+
+       Name        Time/Run   mWd/Run   Percentage
+      ----------- ---------- --------- ------------
+      Float add     2.50ns     2.00w       41.70%
+      Float mul     2.55ns     2.00w       42.52%
+      Float div     5.99ns     2.00w      100.00%</pre><p>If any of the functions resulted in allocation on the major heap (mjWd) or promotions (Prom), columns corresponding to those would be automatically displayed. Columns that do not have significant values are not displayed by default. The most common options one would want to change are the `-q` flag which controls the time quota for testing and enabling/disabling specific columns. For example:</p><pre>      $ ./z.exe -ascii -q 1 cycles
+      Estimated testing time 3s (3 benchmarks x 1s). Change using -quota SECS.
+
+       Name        Time/Run   Cycls/Run   mWd/Run   Percentage
+      ----------- ---------- ----------- --------- ------------
+      Float add     2.50ns       8.49c     2.00w       41.78%
+      Float mul     2.77ns       9.40c     2.00w       46.29%
+      Float div     5.99ns      20.31c     2.00w      100.00%</pre><p>If you drop the `-ascii` flag, the output table uses extended Ascii characters. These display well on most modern terminals, but not on ocamldoc.</p><p>The simplest benchmark specification is just a <code>unit -&gt; unit</code> thunk and a name:</p><pre><code>Bench.Test.create ~name:&quot;Float add&quot; (fun () -&gt; ignore (x +. y));</code></pre><p>One can also create indexed benchmarks, which can be helpful in understanding non-linearities in the execution profiles of functions. For example:</p><pre><code>open! Core
+open Core_bench
+
+let () =
+  Command.run (Bench.make_command [
+    Bench.Test.create_indexed
+      ~name:&quot;Array.create&quot;
+      ~args:[1; 10; 100; 200; 300; 400]
+      (fun len -&gt;
+         Staged.stage (fun () -&gt; ignore(Array.create ~len 0)));
+  ])</code></pre><p>this produces:</p><pre>      $ ./z.exe -ascii -q 3
+      Estimated testing time 18s (6 benchmarks x 3s). Change using -quota SECS.
+
+         Name                 Time/Run   mWd/Run   mjWd/Run   Percentage
+        ------------------ ------------ --------- ---------- ------------
+        Array.create:1        27.23ns     2.00w                   1.08%
+        Array.create:10       38.79ns    11.00w                   1.53%
+        Array.create:100     124.05ns   101.00w                   4.91%
+        Array.create:200     188.13ns   201.00w                   7.44%
+        Array.create:300   1_887.20ns              301.00w       74.64%
+        Array.create:400   2_528.43ns              401.00w      100.00%</pre><p>Executables produced using <code>Bench.make_command</code> are self documenting (use the `-?` flag). The documentation in the executable also closely corresponds to the functionality exposed through the .mli and is a great way to interactively explore what the various options do.</p><ul class="at-tags"><li class="see"><span class="at-tag">see</span> <a href="https://github.com/janestreet/core_bench/wiki" class="value">https://github.com/janestreet/core_bench/wiki</a> <p>Core_bench wiki</p></li></ul></header><div class="odoc-content"><div class="odoc-spec"><div class="spec module" id="module-Test" class="anchored"><a href="#module-Test" class="anchor"></a><code><span><span class="keyword">module</span> <a href="Test/index.html">Test</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div><div class="spec-doc"><p><code>Test.t</code> are benchmarked by calls to bench.</p></div></div><div class="odoc-spec"><div class="spec module" id="module-Variable" class="anchored"><a href="#module-Variable" class="anchor"></a><code><span><span class="keyword">module</span> <a href="Variable/index.html">Variable</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div><div class="spec-doc"><p><code>Variable.t</code>s represent variables than can be used as predictors or the responder when specifying a regression.</p></div></div><div class="odoc-spec"><div class="spec module" id="module-Quota" class="anchored"><a href="#module-Quota" class="anchor"></a><code><span><span class="keyword">module</span> <a href="Quota/index.html">Quota</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div><div class="spec-doc"><p>A quota can be specified as an amount of wall time, or a number of times to run the function.</p></div></div><div class="odoc-spec"><div class="spec module" id="module-Run_config" class="anchored"><a href="#module-Run_config" class="anchor"></a><code><span><span class="keyword">module</span> <a href="Run_config/index.html">Run_config</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div><div class="spec-doc"><p><code>Run_config.t</code> specifies how a benchmark should be run.</p></div></div><div class="odoc-spec"><div class="spec module" id="module-Display_config" class="anchored"><a href="#module-Display_config" class="anchor"></a><code><span><span class="keyword">module</span> <a href="Display_config/index.html">Display_config</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div><div class="spec-doc"><p><code>Display_config.t</code> specifies how the output tables should be formatted.</p></div></div><div class="odoc-spec"><div class="spec module" id="module-Analysis_config" class="anchored"><a href="#module-Analysis_config" class="anchor"></a><code><span><span class="keyword">module</span> <a href="Analysis_config/index.html">Analysis_config</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div><div class="spec-doc"><p>Each <code>Analysis_config.t</code> specifies a regression run by <code>Core_bench</code>. This module also provides several typical regressions that one might want to run.</p></div></div><div class="odoc-spec"><div class="spec module" id="module-Analysis_result" class="anchored"><a href="#module-Analysis_result" class="anchor"></a><code><span><span class="keyword">module</span> <a href="Analysis_result/index.html">Analysis_result</a></span><span> : 
+  <a href="../../Core_bench_internals/Analysis_result_intf/module-type-Analysis_result/index.html">Core_bench_internals.Analysis_result_intf.Analysis_result</a></span></code></div><div class="spec-doc"><p>Results of a benchmark analysis, including all the regressions.</p></div></div><div class="odoc-spec"><div class="spec module" id="module-Measurement" class="anchored"><a href="#module-Measurement" class="anchor"></a><code><span><span class="keyword">module</span> <a href="Measurement/index.html">Measurement</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div><div class="spec-doc"><p>A <code>Measurement.t</code> represents the result of measuring execution of a <code>Test.t</code>. It is used as input for subsequent analysis.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-make_command" class="anchored"><a href="#val-make_command" class="anchor"></a><code><span><span class="keyword">val</span> make_command : <span><span><a href="Test/index.html#type-t">Test.t</a> list</span> <span class="arrow">&#45;&gt;</span></span> <a href="../../../core/Core/Command/index.html#type-t">Core.Command.t</a></span></code></div><div class="spec-doc"><p><code>make_command tests</code> is the easiest way to generate a command-line program that runs a list of benchmarks. Here <code>tests : Test.t list</code> are the benchmarks that should be run. This returns a <code>Command.t</code> which provides a command-line interface for running the benchmarks. See notes above for an example.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-bench" class="anchored"><a href="#val-bench" class="anchor"></a><code><span><span class="keyword">val</span> bench : 
+  <span>?run_config:<a href="Run_config/index.html#type-t">Run_config.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>?analysis_configs:<span><a href="Analysis_config/index.html#type-t">Analysis_config.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?display_config:<a href="Display_config/index.html#type-t">Display_config.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>?save_to_file:<span>( <span><a href="Measurement/index.html#type-t">Measurement.t</a> <span class="arrow">&#45;&gt;</span></span> string )</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?libname:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="Test/index.html#type-t">Test.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  unit</span></code></div><div class="spec-doc"><p><code>bench tests</code> will run, analyze and display the specified <code>tests</code>. Use this when one needs more control over the execution parameters that what is exposed through <code>make_command</code>. <code>bench</code> can also save the measurements of each test to the filename returned by <code>save_to_file</code>.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-measure" class="anchored"><a href="#val-measure" class="anchor"></a><code><span><span class="keyword">val</span> measure : <span>?run_config:<a href="Run_config/index.html#type-t">Run_config.t</a> <span class="arrow">&#45;&gt;</span></span> <span><span><a href="Test/index.html#type-t">Test.t</a> list</span> <span class="arrow">&#45;&gt;</span></span> <span><a href="Measurement/index.html#type-t">Measurement.t</a> list</span></span></code></div><div class="spec-doc"><p><code>measure</code> is a fragment of the functionality of <code>bench</code>. <code>measure tests</code> will run the specified <code>tests</code> and return the resulting measurement results.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-analyze" class="anchored"><a href="#val-analyze" class="anchor"></a><code><span><span class="keyword">val</span> analyze : 
+  <span>?analysis_configs:<span><a href="Analysis_config/index.html#type-t">Analysis_config.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="Measurement/index.html#type-t">Measurement.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="Analysis_result/index.html#type-t">Analysis_result.t</a> <a href="../../../core/Core/Or_error/index.html#type-t">Core.Or_error.t</a></span></span></code></div><div class="spec-doc"><p><code>analyze</code> is a fragment of the functionality of <code>bench</code>. <code>analyze ~analysis_configs m</code> will analyze the measurement <code>m</code> using the regressions specified.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-display" class="anchored"><a href="#val-display" class="anchor"></a><code><span><span class="keyword">val</span> display : 
+  <span>?libname:string <span class="arrow">&#45;&gt;</span></span>
+  <span>?display_config:<a href="Display_config/index.html#type-t">Display_config.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="Analysis_result/index.html#type-t">Analysis_result.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  unit</span></code></div><div class="spec-doc"><p><code>display</code> is a fragment of the functionality of <code>bench</code>. <code>display results</code> will display a tabular summary of <code>results</code> on the terminal.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-make_command_ext" class="anchored"><a href="#val-make_command_ext" class="anchor"></a><code><span><span class="keyword">val</span> make_command_ext : 
+  <span>summary:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>( <span><span>(<span><a href="Analysis_config/index.html#type-t">Analysis_config.t</a> list</span>
+     * <a href="Display_config/index.html#type-t">Display_config.t</a>
+     * <span>[ <span>`From_file of <span>string list</span></span>
+       <span><span>| `Run</span> of <span><span>( <span><a href="Measurement/index.html#type-t">Measurement.t</a> <span class="arrow">&#45;&gt;</span></span> string )</span> option</span> * <a href="Run_config/index.html#type-t">Run_config.t</a></span> ]</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+    unit )</span>
+    <a href="../../../core/Core/Command/Param/index.html#type-t">Core.Command.Param.t</a></span> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../../../core/Core/Command/index.html#type-t">Core.Command.t</a></span></code></div><div class="spec-doc"><p><code>make_command_ext</code> is useful for creating <code>Command.t</code>s that have command line flags in addition to those provided by <code>make_command</code>.</p></div></div></div></body></html>

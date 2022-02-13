@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Expect_test_patdiff (patdiff.Expect_test_patdiff)</title><link rel="stylesheet" href="../../odoc.css"/><meta charset="utf-8"/><meta name="generator" content="odoc 2.1.0"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../index.html">patdiff</a> &#x00BB; Expect_test_patdiff</nav><header class="odoc-preamble"><h1>Module <code><span>Expect_test_patdiff</span></code></h1></header><div class="odoc-content"><div class="odoc-spec"><div class="spec value" id="val-patdiff" class="anchored"><a href="#val-patdiff" class="anchor"></a><code><span><span class="keyword">val</span> patdiff : 
+  <span>?location_style:<a href="../Patdiff_kernel/Format/Location_style/index.html#type-t">Patdiff_kernel.Format.Location_style.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>?context:int <span class="arrow">&#45;&gt;</span></span>
+  <span>?keep_ws:bool <span class="arrow">&#45;&gt;</span></span>
+  <span>string <span class="arrow">&#45;&gt;</span></span>
+  <span>string <span class="arrow">&#45;&gt;</span></span>
+  string</span></code></div><div class="spec-doc"><p>Runs the patdiff algorithm on its inputs to compute the diff to go from the first string to the second string. Produces a multi-line ASCII diff. If specified, <code>~context</code> overrides the default number of lines of context for each hunk. <code>keep_ws</code> overrides the default behavior for whether to consider whitespace in diffs.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-patdiff_s" class="anchored"><a href="#val-patdiff_s" class="anchor"></a><code><span><span class="keyword">val</span> patdiff_s : 
+  <span>?location_style:<a href="../Patdiff_kernel/Format/Location_style/index.html#type-t">Patdiff_kernel.Format.Location_style.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>?context:int <span class="arrow">&#45;&gt;</span></span>
+  <span>?keep_ws:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../core/Core/Sexp/index.html#type-t">Core.Sexp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../core/Core/Sexp/index.html#type-t">Core.Sexp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  string</span></code></div><div class="spec-doc"><p>Like <code>patdiff</code>, but for s-expressions. Formats the s-expressions the same way as <code>print_s</code> from <code>Expect_test_helpers_base</code>, then calls <code>patdiff</code>.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-print_patdiff" class="anchored"><a href="#val-print_patdiff" class="anchor"></a><code><span><span class="keyword">val</span> print_patdiff : 
+  <span>?location_style:<a href="../Patdiff_kernel/Format/Location_style/index.html#type-t">Patdiff_kernel.Format.Location_style.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>?context:int <span class="arrow">&#45;&gt;</span></span>
+  <span>?keep_ws:bool <span class="arrow">&#45;&gt;</span></span>
+  <span>string <span class="arrow">&#45;&gt;</span></span>
+  <span>string <span class="arrow">&#45;&gt;</span></span>
+  unit</span></code></div><div class="spec-doc"><p>Like <code>patdiff</code>, but prints the result to stdout.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-print_patdiff_s" class="anchored"><a href="#val-print_patdiff_s" class="anchor"></a><code><span><span class="keyword">val</span> print_patdiff_s : 
+  <span>?location_style:<a href="../Patdiff_kernel/Format/Location_style/index.html#type-t">Patdiff_kernel.Format.Location_style.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>?context:int <span class="arrow">&#45;&gt;</span></span>
+  <span>?keep_ws:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../core/Core/Sexp/index.html#type-t">Core.Sexp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../core/Core/Sexp/index.html#type-t">Core.Sexp.t</a> <span class="arrow">&#45;&gt;</span></span>
+  unit</span></code></div><div class="spec-doc"><p>Like <code>patdiff_s</code>, but prints the result to stdout.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-diff_printer" class="anchored"><a href="#val-diff_printer" class="anchor"></a><code><span><span class="keyword">val</span> diff_printer : 
+  <span>?location_style:<a href="../Patdiff_kernel/Format/Location_style/index.html#type-t">Patdiff_kernel.Format.Location_style.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>?context:int <span class="arrow">&#45;&gt;</span></span>
+  <span>?keep_ws:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><span>string option</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>( <span>string <span class="arrow">&#45;&gt;</span></span> unit )</span> <a href="../../base/Base/Staged/index.html#type-t">Core.Staged.t</a></span></span></code></div><div class="spec-doc"><p>Produces a stateful function that prints the diff between the previous string and the current one.</p><p>Prints the entirety of the first string it is given, whether that is via the <code>string option</code> argument before unstaging, or via the callback. If the initial string is <code>Some x</code>: Prints the entirety of <code>x</code> immediately. If the initial string is <code>None</code>: Prints the entirety of the first string passed to the callback.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-diff_printer_s" class="anchored"><a href="#val-diff_printer_s" class="anchor"></a><code><span><span class="keyword">val</span> diff_printer_s : 
+  <span>?location_style:<a href="../Patdiff_kernel/Format/Location_style/index.html#type-t">Patdiff_kernel.Format.Location_style.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>?context:int <span class="arrow">&#45;&gt;</span></span>
+  <span>?keep_ws:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../../core/Core/Sexp/index.html#type-t">Core.Sexp.t</a> option</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>( <span><a href="../../core/Core/Sexp/index.html#type-t">Core.Sexp.t</a> <span class="arrow">&#45;&gt;</span></span> unit )</span> <a href="../../base/Base/Staged/index.html#type-t">Core.Staged.t</a></span></span></code></div><div class="spec-doc"><p>Like <code>diff_printer</code>, but for s-expressions. Formats the s-expressions the same way as <code>print_s</code> from <code>Expect_test_helpers_base</code>, then calls <code>diff_printer</code>.</p><p>Prints the entirety of the first sexp it is given, whether that is via the <code>sexp option</code> argument before unstaging, or via the callback. If the initial sexp is <code>Some x</code>: Prints the entirety of <code>x</code> immediately. If the initial sexp is <code>None</code>: Prints the entirety of the first sexp passed to the callback.</p></div></div></div></body></html>

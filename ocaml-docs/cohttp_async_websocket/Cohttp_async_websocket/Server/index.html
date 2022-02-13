@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Server (cohttp_async_websocket.Cohttp_async_websocket.Server)</title><link rel="stylesheet" href="../../../odoc.css"/><meta charset="utf-8"/><meta name="generator" content="odoc 2.1.0"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../../highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../index.html">cohttp_async_websocket</a> &#x00BB; <a href="../index.html">Cohttp_async_websocket</a> &#x00BB; Server</nav><header class="odoc-preamble"><h1>Module <code><span>Cohttp_async_websocket.Server</span></code></h1></header><div class="odoc-content"><div class="odoc-spec"><div class="spec module" id="module-On_connection" class="anchored"><a href="#module-On_connection" class="anchor"></a><code><span><span class="keyword">module</span> <a href="On_connection/index.html">On_connection</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div></div><div class="odoc-spec"><div class="spec type" id="type-websocket_handler" class="anchored"><a href="#type-websocket_handler" class="anchor"></a><code><span><span class="keyword">type</span> websocket_handler</span><span> =
+  <span>inet:<a href="../../../async_unix/Async_unix/Socket/Address/Inet/index.html#type-t">Async.Socket.Address.Inet.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>subprotocol:<span>string option</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../../cohttp/Cohttp/Request/index.html#type-t">Cohttp.Request.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="On_connection/index.html#type-t">On_connection.t</a> <a href="../../../async/Async/Deferred/index.html#type-t">Async.Deferred.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-create" class="anchored"><a href="#val-create" class="anchor"></a><code><span><span class="keyword">val</span> create : 
+  <span>non_ws_request:<a href="../index.html#type-http_handler">http_handler</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>?opcode:<span>[ `Text <span>| `Binary</span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?should_process_request:
+    <span>( <span><a href="../../../async_unix/Async_unix/Socket/Address/Inet/index.html#type-t">Async.Socket.Address.Inet.t</a> <span class="arrow">&#45;&gt;</span></span>
+      <span><a href="../Header/index.html#type-t">Header.t</a> <span class="arrow">&#45;&gt;</span></span>
+      <span>is_websocket_request:bool <span class="arrow">&#45;&gt;</span></span>
+      <span>unit <a href="../../../core/Core/Or_error/index.html#type-t">Core.Or_error.t</a></span> )</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?websocket_subprotocol_selection:
+    <span>( <span><a href="../../../cohttp-async/Cohttp_async/Request/index.html#type-t">Cohttp_async.Request.t</a> <span class="arrow">&#45;&gt;</span></span> <span>[ <span>`Subprotocol of <span>string option</span></span> ]</span> )</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-websocket_handler">websocket_handler</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../index.html#type-raw_http_handler">raw_http_handler</a></span></code></div></div></div></body></html>

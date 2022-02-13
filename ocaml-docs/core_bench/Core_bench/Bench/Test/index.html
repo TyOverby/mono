@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Test (core_bench.Core_bench.Bench.Test)</title><link rel="stylesheet" href="../../../../odoc.css"/><meta charset="utf-8"/><meta name="generator" content="odoc 2.1.0"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../../../highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../../index.html">core_bench</a> &#x00BB; <a href="../../index.html">Core_bench</a> &#x00BB; <a href="../index.html">Bench</a> &#x00BB; Test</nav><header class="odoc-preamble"><h1>Module <code><span>Bench.Test</span></code></h1><p><code>Test.t</code> are benchmarked by calls to bench.</p></header><div class="odoc-content"><div class="odoc-spec"><div class="spec type" id="type-t" class="anchored"><a href="#type-t" class="anchor"></a><code><span><span class="keyword">type</span> t</span><span> = <a href="../../../Core_bench_internals/Test/index.html#type-t">Core_bench_internals.Test.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-create" class="anchored"><a href="#val-create" class="anchor"></a><code><span><span class="keyword">val</span> create : 
+  <span>name:string <span class="arrow">&#45;&gt;</span></span>
+  <span>?test_name:string <span class="arrow">&#45;&gt;</span></span>
+  <span>?file_name:string <span class="arrow">&#45;&gt;</span></span>
+  <span>?module_name:string <span class="arrow">&#45;&gt;</span></span>
+  <span>?key:int <span class="arrow">&#45;&gt;</span></span>
+  <span><span>( <span>unit <span class="arrow">&#45;&gt;</span></span> <span class="type-var">'a</span> )</span> <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p>Creates a simple benchmark. Here the benchmark may return some <code>'a</code> which is then ignored. One should be careful when putting calls to <code>ignore</code> in benchmarks because OCaml versions 4.02 onwards can optimize away some ignored computations.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-create_with_initialization" class="anchored"><a href="#val-create_with_initialization" class="anchor"></a><code><span><span class="keyword">val</span> create_with_initialization : 
+  <span>name:string <span class="arrow">&#45;&gt;</span></span>
+  <span>?test_name:string <span class="arrow">&#45;&gt;</span></span>
+  <span>?file_name:string <span class="arrow">&#45;&gt;</span></span>
+  <span>?module_name:string <span class="arrow">&#45;&gt;</span></span>
+  <span>?key:int <span class="arrow">&#45;&gt;</span></span>
+  <span><span>( <span><span>[ `init ]</span> <span class="arrow">&#45;&gt;</span></span> <span>unit <span class="arrow">&#45;&gt;</span></span> <span class="type-var">'a</span> )</span> <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-create_parameterised" class="anchored"><a href="#val-create_parameterised" class="anchor"></a><code><span><span class="keyword">val</span> create_parameterised : 
+  <span>name:string <span class="arrow">&#45;&gt;</span></span>
+  <span>?test_name:string <span class="arrow">&#45;&gt;</span></span>
+  <span>?file_name:string <span class="arrow">&#45;&gt;</span></span>
+  <span>?module_name:string <span class="arrow">&#45;&gt;</span></span>
+  <span>args:<span><span>(string * <span class="type-var">'param</span>)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?key:int <span class="arrow">&#45;&gt;</span></span>
+  <span><span>( <span><span class="type-var">'param</span> <span class="arrow">&#45;&gt;</span></span> <span><span>( <span>unit <span class="arrow">&#45;&gt;</span></span> <span class="type-var">'a</span> )</span> <a href="../../../../base/Base/Staged/index.html#type-t">Core.Staged.t</a></span> )</span> <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p>Creates a group of benchmarks indexed by a size. Also see comment on <code>create</code> about the <code>'a</code> below.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-create_indexed" class="anchored"><a href="#val-create_indexed" class="anchor"></a><code><span><span class="keyword">val</span> create_indexed : 
+  <span>name:string <span class="arrow">&#45;&gt;</span></span>
+  <span>?test_name:string <span class="arrow">&#45;&gt;</span></span>
+  <span>?file_name:string <span class="arrow">&#45;&gt;</span></span>
+  <span>?module_name:string <span class="arrow">&#45;&gt;</span></span>
+  <span>args:<span>int list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?key:int <span class="arrow">&#45;&gt;</span></span>
+  <span><span>( <span>int <span class="arrow">&#45;&gt;</span></span> <span><span>( <span>unit <span class="arrow">&#45;&gt;</span></span> <span class="type-var">'a</span> )</span> <a href="../../../../base/Base/Staged/index.html#type-t">Core.Staged.t</a></span> )</span> <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p>Creates a group of benchmarks indexed by a size. Also see comment on <code>create</code> about the <code>'a</code> below.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-create_group" class="anchored"><a href="#val-create_group" class="anchor"></a><code><span><span class="keyword">val</span> create_group : 
+  <span>name:string <span class="arrow">&#45;&gt;</span></span>
+  <span>?test_name:string <span class="arrow">&#45;&gt;</span></span>
+  <span>?file_name:string <span class="arrow">&#45;&gt;</span></span>
+  <span>?module_name:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="#type-t">t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-name" class="anchored"><a href="#val-name" class="anchor"></a><code><span><span class="keyword">val</span> name : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> string</span></code></div></div></div></body></html>

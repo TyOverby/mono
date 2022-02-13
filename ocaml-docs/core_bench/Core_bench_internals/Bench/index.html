@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Bench (core_bench.Core_bench_internals.Bench)</title><link rel="stylesheet" href="../../../odoc.css"/><meta charset="utf-8"/><meta name="generator" content="odoc 2.1.0"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../../highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../index.html">core_bench</a> &#x00BB; <a href="../index.html">Core_bench_internals</a> &#x00BB; Bench</nav><header class="odoc-preamble"><h1>Module <code><span>Core_bench_internals.Bench</span></code></h1><p>The purpose of functions in this module are documented in the <code>Core_bench.Bench</code> module</p><p>These functions are different in one main regard: they take first-class functions for platform-specific functionality, like displaying the tables, or performing the actual measurement for the benchmark. That is what these <code>measure_with</code> and <code>display</code> parameters are for.</p></header><div class="odoc-content"><div class="odoc-spec"><div class="spec value" id="val-bench" class="anchored"><a href="#val-bench" class="anchor"></a><code><span><span class="keyword">val</span> bench : 
+  <span>?run_config:<a href="../Run_config/index.html#type-t">Run_config.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>?analysis_configs:<span><a href="../Analysis_config/index.html#type-t">Analysis_config.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?display_config:<span class="type-var">'a</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?save_to_file:<span>( <span><a href="../Measurement/index.html#type-t">Measurement.t</a> <span class="arrow">&#45;&gt;</span></span> string )</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?libname:<span class="type-var">'b</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../Test/index.html#type-t">Test.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>measure_with:<span>( <span><a href="../Run_config/index.html#type-t">Run_config.t</a> <span class="arrow">&#45;&gt;</span></span> <span><span><a href="../Test/Basic_test/index.html#type-t">Test.Basic_test.t</a> list</span> <span class="arrow">&#45;&gt;</span></span> <span><a href="../Measurement/index.html#type-t">Measurement.t</a> list</span> )</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>display:
+    <span>( <span>?libname:<span class="type-var">'b</span> <span class="arrow">&#45;&gt;</span></span> <span>?display_config:<span class="type-var">'a</span> <span class="arrow">&#45;&gt;</span></span> <span><span><a href="../Analysis_result/index.html#type-t">Analysis_result.t</a> list</span> <span class="arrow">&#45;&gt;</span></span> unit )</span> <span class="arrow">&#45;&gt;</span></span>
+  unit</span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-measure" class="anchored"><a href="#val-measure" class="anchor"></a><code><span><span class="keyword">val</span> measure : 
+  <span>?run_config:<a href="../Run_config/index.html#type-t">Run_config.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../Test/index.html#type-t">Test.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>measure_with:<span>( <span><a href="../Run_config/index.html#type-t">Run_config.t</a> <span class="arrow">&#45;&gt;</span></span> <span><span><a href="../Test/Basic_test/index.html#type-t">Test.Basic_test.t</a> list</span> <span class="arrow">&#45;&gt;</span></span> <span><a href="../Measurement/index.html#type-t">Measurement.t</a> list</span> )</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Measurement/index.html#type-t">Measurement.t</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-analyze" class="anchored"><a href="#val-analyze" class="anchor"></a><code><span><span class="keyword">val</span> analyze : 
+  <span>?analysis_configs:<span><a href="../Analysis_config/index.html#type-t">Analysis_config.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Measurement/index.html#type-t">Measurement.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Analysis_result/index.html#type-t">Analysis_result.t</a> <a href="../../../core/Core/Or_error/index.html#type-t">Core.Or_error.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-analyze_and_display" class="anchored"><a href="#val-analyze_and_display" class="anchor"></a><code><span><span class="keyword">val</span> analyze_and_display : 
+  <span>measurements:<span><a href="../Measurement/index.html#type-t">Measurement.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?analysis_configs:<span><a href="../Analysis_config/index.html#type-t">Analysis_config.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?display_config:<a href="../Display_config/index.html#type-t">Display_config.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>?libname:<span class="type-var">'b</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>display:
+    <span>( <span>?libname:<span class="type-var">'b</span> <span class="arrow">&#45;&gt;</span></span>
+      <span>?display_config:<a href="../Display_config/index.html#type-t">Display_config.t</a> <span class="arrow">&#45;&gt;</span></span>
+      <span><span><a href="../Analysis_result/index.html#type-t">Analysis_result.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+      <span class="type-var">'c</span> )</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>unit <span class="arrow">&#45;&gt;</span></span>
+  <span class="type-var">'c</span></span></code></div></div></div></body></html>

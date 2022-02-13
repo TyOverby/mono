@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Expert (async_js.Async_js.Rpc.Implementations.Expert)</title><link rel="stylesheet" href="../../../../../odoc.css"/><meta charset="utf-8"/><meta name="generator" content="odoc 2.1.0"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../../../../highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../../../index.html">async_js</a> &#x00BB; <a href="../../../index.html">Async_js</a> &#x00BB; <a href="../../index.html">Rpc</a> &#x00BB; <a href="../index.html">Implementations</a> &#x00BB; Expert</nav><header class="odoc-preamble"><h1>Module <code><span>Implementations.Expert</span></code></h1><p>Low-level, untyped access to queries. Regular users should ignore this.</p></header><div class="odoc-content"><div class="odoc-spec"><div class="spec module" id="module-Responder" class="anchored"><a href="#module-Responder" class="anchor"></a><code><span><span class="keyword">module</span> <a href="Responder/index.html">Responder</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div><div class="spec-doc"><p>See <code>Rpc.Expert.Responder</code> for how to use this.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-create_exn" class="anchored"><a href="#val-create_exn" class="anchor"></a><code><span><span class="keyword">val</span> create_exn : 
+  <span>implementations:<span><span><span class="type-var">'connection_state</span> <a href="../../Implementation/index.html#type-t">Implementation.t</a></span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>on_unknown_rpc:
+    <span>[ `Raise
+    <span>| `Continue</span>
+    <span>| `Close_connection</span>
+    <span><span>| `Call</span> of
+      <span><span class="type-var">'connection_state</span> <span class="arrow">&#45;&gt;</span></span>
+      <span>rpc_tag:string <span class="arrow">&#45;&gt;</span></span>
+      <span>version:int <span class="arrow">&#45;&gt;</span></span>
+      <span>[ `Close_connection <span>| `Continue</span> ]</span></span>
+    <span><span>| `Expert</span> of
+      <span><span class="type-var">'connection_state</span> <span class="arrow">&#45;&gt;</span></span>
+      <span>rpc_tag:string <span class="arrow">&#45;&gt;</span></span>
+      <span>version:int <span class="arrow">&#45;&gt;</span></span>
+      <span><a href="Responder/index.html#type-t">Responder.t</a> <span class="arrow">&#45;&gt;</span></span>
+      <span><a href="../../../../../core/Core/Bigstring/index.html#type-t">Core.Bigstring.t</a> <span class="arrow">&#45;&gt;</span></span>
+      <span>pos:int <span class="arrow">&#45;&gt;</span></span>
+      <span>len:int <span class="arrow">&#45;&gt;</span></span>
+      <span>unit <a href="../../../../../async_kernel/Async_kernel/Deferred/index.html#type-t">Async_kernel.Deferred.t</a></span></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="type-var">'connection_state</span> <a href="../index.html#type-t">t</a></span></span></code></div><div class="spec-doc"><p>Same as <code>create_exn</code>, except for the additional <code>`Expert</code> variant.</p></div></div></div></body></html>

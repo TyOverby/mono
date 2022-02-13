@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>S (incr_dom.Incr_dom.App_intf.S)</title><link rel="stylesheet" href="../../../../odoc.css"/><meta charset="utf-8"/><meta name="generator" content="odoc 2.1.0"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../../../highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../../index.html">incr_dom</a> &#x00BB; <a href="../../index.html">Incr_dom</a> &#x00BB; <a href="../index.html">App_intf</a> &#x00BB; S</nav><header class="odoc-preamble"><h1>Module type <code><span>App_intf.S</span></code></h1></header><div class="odoc-content"><div class="odoc-spec"><div class="spec module" id="module-Model" class="anchored"><a href="#module-Model" class="anchor"></a><code><span><span class="keyword">module</span> <a href="Model/index.html">Model</a></span><span> : <a href="../module-type-Model/index.html">Model</a></span></code></div></div><div class="odoc-spec"><div class="spec module" id="module-Action" class="anchored"><a href="#module-Action" class="anchor"></a><code><span><span class="keyword">module</span> <a href="Action/index.html">Action</a></span><span> : <a href="../module-type-Action/index.html">Action</a></span></code></div></div><div class="odoc-spec"><div class="spec module" id="module-State" class="anchored"><a href="#module-State" class="anchor"></a><code><span><span class="keyword">module</span> <a href="State/index.html">State</a></span><span> : <a href="../module-type-State/index.html">State</a></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-on_startup" class="anchored"><a href="#val-on_startup" class="anchor"></a><code><span><span class="keyword">val</span> on_startup : 
+  <span>schedule_action:<span>( <span><a href="Action/index.html#type-t">Action.t</a> <span class="arrow">&#45;&gt;</span></span> unit )</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="Model/index.html#type-t">Model.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="State/index.html#type-t">State.t</a> <a href="../../../../async_kernel/Async_kernel/Deferred/index.html#type-t">Async_kernel.Deferred.t</a></span></span></code></div><div class="spec-doc"><p><code>on_startup</code> is called once, right after the initial DOM is set to the view that corresponds to the initial state. This is useful for doing things like starting up async processes. Note that this part of the computation does not support any incrementality, since it's only run once.</p></div></div><div class="odoc-spec"><div class="spec value" id="val-create" class="anchored"><a href="#val-create" class="anchor"></a><code><span><span class="keyword">val</span> create : 
+  <span><span><a href="Model/index.html#type-t">Model.t</a> <a href="../../Incr/index.html#type-t">Incr.t</a></span> <span class="arrow">&#45;&gt;</span></span>
+  <span>old_model:<span><a href="Model/index.html#type-t">Model.t</a> <a href="../../Incr/index.html#type-t">Incr.t</a></span> <span class="arrow">&#45;&gt;</span></span>
+  <span>inject:<span>( <span><a href="Action/index.html#type-t">Action.t</a> <span class="arrow">&#45;&gt;</span></span> <span>unit <a href="../../../../virtual_dom/Virtual_dom/Vdom/Effect/index.html#type-t">Virtual_dom.Vdom.Effect.t</a></span> )</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>( <a href="Action/index.html#type-t">Action.t</a>, <a href="Model/index.html#type-t">Model.t</a>, <a href="State/index.html#type-t">State.t</a> )</span> <a href="../../Component/index.html#type-t">Component.t</a></span> <a href="../../Incr/index.html#type-t">Incr.t</a></span></span></code></div><div class="spec-doc"><p><code>create</code> is a function that incrementally constructs a <a href="../../Component/index.html"><code>Component</code></a>. Note that a <code>Component</code> supports functions like <code>apply_action</code>, which return a new <code>Model.t</code>, without taking a model as an explicit input. The intent is for <code>apply_action</code> to have access to the current model via its construction</p><p>Here's an example of how this might look in practice.</p><pre><code>module Model = struct
+  type t = { counter : int } [@@deriving fields, compare]
+
+  let cutoff t1 t2 = compare t1 t2 = 0
+end
+
+module State = struct
+  type t = unit
+end
+
+module Action = struct
+  type t = Increment [@@deriving sexp_of]
+
+  let should_log _ = false
+end
+
+let initial_model = { Model.counter = 0 }
+
+let on_startup ~schedule_actions _model =
+  every (Time_ns.Span.of_sec 1.) (fun () -&gt;
+    schedule_actions [ Action.Increment ]);
+  Deferred.unit
+;;
+
+let create model ~old_model:_ ~inject:_ =
+  let open Incr.Let_syntax in
+  let%map apply_action =
+    let%map counter = model &gt;&gt;| Model.counter in
+    fun (Increment : Action.t) _ ~schedule_actions:_ -&gt;
+      { Model.counter = counter + 1 }
+  and view =
+    let%map counter =
+      let%map counter = model &gt;&gt;| Model.counter in
+      Vdom.Node.div [] [ Vdom.Node.text (Int.to_string counter) ]
+    in
+    Vdom.Node.body [] [ counter ]
+  and model = model in
+  (* Note that we don't include [on_display] or [update_visibility], since
+     these are optional arguments *)
+  Component.create ~apply_action model view
+;; </code></pre><p>The full code for this example can be found in examples/counter.</p></div></div></div></body></html>

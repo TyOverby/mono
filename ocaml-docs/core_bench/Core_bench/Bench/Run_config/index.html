@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Run_config (core_bench.Core_bench.Bench.Run_config)</title><link rel="stylesheet" href="../../../../odoc.css"/><meta charset="utf-8"/><meta name="generator" content="odoc 2.1.0"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../../../highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../../index.html">core_bench</a> &#x00BB; <a href="../../index.html">Core_bench</a> &#x00BB; <a href="../index.html">Bench</a> &#x00BB; Run_config</nav><header class="odoc-preamble"><h1>Module <code><span>Bench.Run_config</span></code></h1><p><code>Run_config.t</code> specifies how a benchmark should be run.</p></header><div class="odoc-content"><div class="odoc-spec"><div class="spec type" id="type-t" class="anchored"><a href="#type-t" class="anchor"></a><code><span><span class="keyword">type</span> t</span><span> = <a href="../../../Core_bench_internals/Run_config/index.html#type-t">Core_bench_internals.Run_config.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-create" class="anchored"><a href="#val-create" class="anchor"></a><code><span><span class="keyword">val</span> create : 
+  <span>?verbosity:<a href="../../../Core_bench_internals/Verbosity/index.html#type-t">Core_bench_internals.Verbosity.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>?no_compactions:bool <span class="arrow">&#45;&gt;</span></span>
+  <span>?quota:<a href="../Quota/index.html#type-t">Quota.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>?sampling_type:<span>[ <span>`Geometric of float</span> <span><span>| `Linear</span> of int</span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>?stabilize_gc_between_runs:bool <span class="arrow">&#45;&gt;</span></span>
+  <span>?fork_each_benchmark:bool <span class="arrow">&#45;&gt;</span></span>
+  <span>?thin_overhead:int <span class="arrow">&#45;&gt;</span></span>
+  <span>unit <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div></div></div></body></html>
