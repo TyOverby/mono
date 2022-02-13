@@ -57,33 +57,35 @@ module Grouped_by_header = struct
   type t =
     | Header of
         { title : Pandoc.Inline.t list
+        ; level : int
+        ; attr : Pandoc.Attrs.t
         ; children : t list
         }
     | Block of Pandoc.Block.t
   [@@deriving sexp]
 
-  let list_item ~children c = Header { title = c; children }
+  let list_item ~level ~attr ~children c = Header { title = c; attr; children; level }
 
   let headers acc = function
-    | Pandoc.Block.Header (i, _, c) -> `H (i, c, []) :: acc
+    | Pandoc.Block.Header (i, attr, c) -> `H (i, attr, c, []) :: acc
     | block -> `B block :: acc
   ;;
 
   let rec loop = function
     | [] -> [], []
     | [ `B block ] -> [ Block block ], []
-    | [ `H (_, c, children) ] -> [ list_item c ~children ], []
-    | `H (a, c, children) :: (`H (b, _, _) :: _ as rest) when a < b ->
+    | [ `H (l, attr, c, children) ] -> [ list_item c ~attr ~level:l ~children ], []
+    | `H (a, attr, c, children) :: (`H (b, _, _, _) :: _ as rest) when a < b ->
       let lower, rest = loop rest in
-      loop (`H (a, c, children @ lower) :: rest)
-    | `H (a, c, children) :: (`B _ :: _ as rest) ->
+      loop (`H (a, attr, c, children @ lower) :: rest)
+    | `H (a, attr, c, children) :: (`B _ :: _ as rest) ->
       let lower, rest = loop rest in
-      loop (`H (a, c, children @ lower) :: rest)
-    | `H (a, c, children) :: (`H (b, _, _) :: _ as rest) when a > b ->
-      [ list_item c ~children ], rest
-    | `H (_, c, children) :: rest ->
+      loop (`H (a, attr, c, children @ lower) :: rest)
+    | `H (a, attr, c, children) :: (`H (b, _, _, _) :: _ as rest) when a > b ->
+      [ list_item c ~attr ~level:a ~children ], rest
+    | `H (l, attr, c, children) :: rest ->
       let same, higher = loop rest in
-      list_item c ~children :: same, higher
+      list_item c ~attr ~level:l ~children :: same, higher
     | `B b :: (`H _ :: _ as rest) -> [ Block b ], rest
     | `B b :: xs ->
       let same, higher = loop xs in
@@ -98,6 +100,14 @@ module Grouped_by_header = struct
   let f (ast : Pandoc.t) =
     ast |> Pandoc.fold ~init:[] ~block:headers |> List.rev |> loop |> loop'
   ;;
+
+  let rec un_f = function
+    | Block b -> [ b ]
+    | Header { title; attr; level; children } ->
+      Header (level, attr, title) :: List.bind children ~f:un_f
+  ;;
+
+  let un_f = List.bind ~f:un_f
 end
 
 module Toc = struct
@@ -113,7 +123,7 @@ module Toc = struct
 
   let rec to_bulleted_list = function
     | Block _ -> None
-    | Header { title; children } ->
+    | Header { title; children; _ } ->
       Some (list_item title ~children:(List.filter_map children ~f:to_bulleted_list))
   ;;
 

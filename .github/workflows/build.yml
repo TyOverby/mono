@@ -42,12 +42,20 @@ jobs:
           path: |
             _opam 
             _build
-          key: ${{ runner.os }}-${{ matrix.refresh_packages}}
+          key: ${{ runner.os }}-${{ matrix.refresh_packages}}-2
 
-      - name: Use OCaml ${{ matrix.ocaml-compiler }}
-        uses: ocaml/setup-ocaml@v2
-        with:
-          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+      - name: Brew Install Opam
+        if: runner.os == 'macOS'
+        run: brew install opam
+
+      - name: Apt Install Opam
+        if: runner.os ~= 'macOS'
+        run: apt install opam
+
+#     - name: Use OCaml ${{ matrix.ocaml-compiler }}
+#       uses: ocaml/setup-ocaml@v2
+#       with:
+#         ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
       - name: Pull Nightly Packages
         if: matrix.refresh_packages == 'nightly_packages'

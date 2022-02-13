@@ -108,27 +108,46 @@ cccccc
         -   x |}]
     ;;
 
-    let%expect_test "basic toc" =
+    let%expect_test _ =
       {|
 ## a
 # b
+## c
+      |} |> parse |> Md.Toc.f |> unparse |> print_endline;
+      [%expect {|
+        -   a
+        -   b
+            -   c |}]
+    ;;
+
+    let%expect_test _ =
+      {|
+# x
+### a
+## b
+### c
       |} |> parse |> Md.Toc.f |> unparse |> print_endline;
       [%expect
         {|
-        -   a
-        -   b |}]
+        -   x
+            -   a
+            -   b
+                -   c |}]
     ;;
   end)
 ;;
 
 let%test_module "group by header" =
   (module struct
-    let%expect_test "basic toc" =
+    let%expect_test _ =
       {|
 test test test
 
 # a
 sdsdf
+
+### c
+cccccccc
 
 # b
 bbbbbbb
@@ -146,12 +165,71 @@ ddddddd
       [%expect
         {|
         ((Block (Para (Str test) Space (Str test) Space (Str test)))
-         (Header (title ((Str a))) (children ((Block (Para (Str sdsdf))))))
-         (Header (title ((Str b)))
+         (Header (title ((Str a))) (level 1) (attr (a () ()))
+          (children
+           ((Block (Para (Str sdsdf)))
+            (Header (title ((Str c))) (level 3) (attr (c () ()))
+             (children ((Block (Para (Str cccccccc)))))))))
+         (Header (title ((Str b))) (level 1) (attr (b () ()))
           (children
            ((Block (Para (Str bbbbbbb)))
-            (Header (title ((Str c))) (children ((Block (Para (Str cccccccc)))))))))
-         (Header (title ((Str d))) (children ((Block (Para (Str ddddddd))))))) |}]
+            (Header (title ((Str c))) (level 2) (attr (c-1 () ()))
+             (children ((Block (Para (Str cccccccc)))))))))
+         (Header (title ((Str d))) (level 1) (attr (d () ()))
+          (children ((Block (Para (Str ddddddd))))))) |}]
+    ;;
+
+    let%expect_test _ =
+      let doc =
+        {|
+test test test
+
+# a
+sdsdf
+
+### c
+cccccccc
+
+# b
+bbbbbbb
+
+## c
+cccccccc
+
+# d 
+ddddddd
+|}
+        |> parse
+      in
+      doc
+      |> Md.Grouped_by_header.f
+      |> Md.Grouped_by_header.un_f
+      |> Pandoc.with_top_level_blocks doc
+      |> unparse
+      |> print_endline;
+      [%expect
+        {|
+        test test test
+
+        # a
+
+        sdsdf
+
+        ### c
+
+        cccccccc
+
+        # b
+
+        bbbbbbb
+
+        ## c
+
+        cccccccc
+
+        # d
+
+        ddddddd |}]
     ;;
   end)
 ;;
