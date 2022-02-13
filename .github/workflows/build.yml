@@ -46,11 +46,11 @@ jobs:
 
       - name: Brew Install Opam
         if: runner.os == 'macOS'
-        run: brew install opam
+        run: brew install opam && opam init
 
       - name: Apt Install Opam
         if: runner.os != 'macOS'
-        run: apt install opam
+        run: sudo apt install opam && opam init
 
 #     - name: Use OCaml ${{ matrix.ocaml-compiler }}
 #       uses: ocaml/setup-ocaml@v2
