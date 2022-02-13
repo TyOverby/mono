@@ -1,0 +1,313 @@
+diff --git b/vendor/janestreet-incr_map/collate/src/collated.ml a/vendor/janestreet-incr_map/collate/src/collated.ml
+index 4da8a74..f7e8408 100644
+--- b/vendor/janestreet-incr_map/collate/src/collated.ml
++++ a/vendor/janestreet-incr_map/collate/src/collated.ml
+@@ -81,111 +81,9 @@ struct
+     (* We have to implement this by hand, as ppx_diff (or Diffable really)
+        doesn't support parametrized types *)
+ 
+-    module Update = struct
+-      module Map_data = struct
+-        type t = Key.t * Value.t [@@deriving sexp, bin_io, compare, equal]
+       end
+ 
+-      module Map = Diffable.Map.Make (Int63) (Map_data)
+-
+-      module Diff = struct
+-        type t =
+-          | Data of Map.Update.Diff.t
+-          | Num_filtered_rows of int
+-          | Key_range of Key.t Which_range.t
+-          | Rank_range of int Which_range.t
+-          | Elements_prior_to_range of int
+-          | Num_unfiltered_rows of int
+-        [@@deriving sexp, bin_io]
+-      end
+-
+-      type t = Diff.t list [@@deriving sexp, bin_io]
+-    end
+-
+-    let update (t : t) (update : Update.t) =
+-      List.fold update ~init:t ~f:(fun acc diff ->
+-        match diff with
+-        | Data map_diff -> { acc with data = Update.Map.update acc.data [ map_diff ] }
+-        | Num_filtered_rows num_filtered_rows -> { acc with num_filtered_rows }
+-        | Key_range key_range -> { acc with key_range }
+-        | Rank_range rank_range -> { acc with rank_range }
+-        | Elements_prior_to_range num_before_range -> { acc with num_before_range }
+-        | Num_unfiltered_rows num_unfiltered_rows -> { acc with num_unfiltered_rows })
+-    ;;
+-
+-    let wrap_map_update = List.map ~f:(fun x -> Update.Diff.Data x)
+-
+-    let diffs ~from ~to_ =
+-      let get = Fieldslib.Field.get in
+-      Fields.fold
+-        ~init:[]
+-        ~data:(fun acc field ->
+-          let from, to_ = get field from, get field to_ in
+-          wrap_map_update (Update.Map.diffs ~from ~to_) @ acc)
+-        ~num_filtered_rows:(fun acc field ->
+-          let from, to_ = get field from, get field to_ in
+-          if Int.equal from to_ then acc else Num_filtered_rows to_ :: acc)
+-        ~key_range:(fun acc field ->
+-          let from, to_ = get field from, get field to_ in
+-          if Which_range.equal Key.equal from to_ then acc else Key_range to_ :: acc)
+-        ~rank_range:(fun acc field ->
+-          let from, to_ = get field from, get field to_ in
+-          if Which_range.equal Int.equal from to_ then acc else Rank_range to_ :: acc)
+-        ~num_before_range:(fun acc field ->
+-          let from, to_ = get field from, get field to_ in
+-          if Int.equal from to_ then acc else Elements_prior_to_range to_ :: acc)
+-        ~num_unfiltered_rows:(fun acc field ->
+-          let from, to_ = get field from, get field to_ in
+-          if Int.equal from to_ then acc else Num_unfiltered_rows to_ :: acc)
+-    ;;
+-
+-    let to_diffs (t : t) =
+-      let get f = Fieldslib.Field.get f t in
+-      Fields.fold
+-        ~init:[]
+-        ~data:(fun acc field -> wrap_map_update (Update.Map.to_diffs (get field)) @ acc)
+-        ~num_filtered_rows:(fun acc field ->
+-          Update.Diff.Num_filtered_rows (get field) :: acc)
+-        ~key_range:(fun acc field -> Update.Diff.Key_range (get field) :: acc)
+-        ~rank_range:(fun acc field -> Update.Diff.Rank_range (get field) :: acc)
+-        ~num_before_range:(fun acc field ->
+-          Update.Diff.Elements_prior_to_range (get field) :: acc)
+-        ~num_unfiltered_rows:(fun acc field ->
+-          Update.Diff.Num_unfiltered_rows (get field) :: acc)
+-    ;;
+-
+-    let of_diffs (update : Update.t) =
+-      let data_update = ref [] in
+-      let num_filtered_rows = ref None in
+-      let key_range = ref None in
+-      let rank_range = ref None in
+-      let num_before_range = ref 0 in
+-      let num_unfiltered_rows = ref None in
+-      List.iter update ~f:(function
+-        | Data map_diff -> data_update := map_diff :: !data_update
+-        | Num_filtered_rows n -> num_filtered_rows := Some n
+-        | Key_range r -> key_range := Some r
+-        | Rank_range r -> rank_range := Some r
+-        | Elements_prior_to_range i -> num_before_range := i
+-        | Num_unfiltered_rows n -> num_unfiltered_rows := Some n);
+-      let data = Update.Map.of_diffs !data_update in
+-      let get_exn ref ~name =
+-        Option.value_exn
+-          !ref
+-          ~message:(sprintf "[Collated.of_diffs]: %s missing from diffs list" name)
+-      in
+-      Fields.create
+-        ~data
+-        ~num_filtered_rows:(get_exn num_filtered_rows ~name:"num_filtered_rows")
+-        ~key_range:(get_exn key_range ~name:"key_range")
+-        ~rank_range:(get_exn rank_range ~name:"rank_range")
+-        ~num_before_range:!num_before_range
+-        ~num_unfiltered_rows:(get_exn num_unfiltered_rows ~name:"num_unfiltered_rows")
+-    ;;
+-  end
+-
+   include T
+-  include Diffable.Make_streamable (T)
+ 
+   let findi_by_key t key =
+     let found =
+diff --git b/vendor/janestreet-incr_map/collate/src/collated_intf.ml a/vendor/janestreet-incr_map/collate/src/collated_intf.ml
+index 6a566be..fcdd5bc 100644
+--- b/vendor/janestreet-incr_map/collate/src/collated_intf.ml
++++ a/vendor/janestreet-incr_map/collate/src/collated_intf.ml
+@@ -88,8 +88,6 @@ module type Concrete = sig
+   val key_range : t -> Key.t Which_range.t
+   val rank_range : t -> int Which_range.t
+ 
+-  include Diffable.S with type t := t
+-  include Streamable.S with type t := t
+ 
+ 
+   val find_by_key : t -> Key.t -> Value.t option
+diff --git b/vendor/janestreet-incr_map/collate/src/dune a/vendor/janestreet-incr_map/collate/src/dune
+index a223465..90b311d 100644
+--- b/vendor/janestreet-incr_map/collate/src/dune
++++ a/vendor/janestreet-incr_map/collate/src/dune
+@@ -1,3 +1,5 @@
+-(library (name incr_map_collate)
+- (libraries core incr_map incr_memoize incremental diffable streamable)
+- (preprocess (pps ppx_jane ppx_pattern_bind)))
+\ No newline at end of file
++(library 
++ (name incr_map_collate)
++ (public_name incr_map.collate)
++ (libraries core incr_map incremental)
++ (preprocess (pps ppx_jane ppx_pattern_bind)))
+diff --git b/vendor/janestreet-incr_map/collate/src/incr_map_collate.ml a/vendor/janestreet-incr_map/collate/src/incr_map_collate.ml
+index cc767b4..fb3846d 100644
+--- b/vendor/janestreet-incr_map/collate/src/incr_map_collate.ml
++++ a/vendor/janestreet-incr_map/collate/src/incr_map_collate.ml
+@@ -2,8 +2,6 @@ open! Core
+ module Collate = Collate
+ module Collated = Collated
+ module Map_list = Map_list
+-module Store = Incr_memoize.Store
+-module Store_params = Incr_memoize.Store_params
+ 
+ module Compare = struct
+   type ('k, 'v, 'cmp) t =
+@@ -53,7 +51,7 @@ module Make (Incr : Incremental.S) = struct
+     include T
+     include Comparable.Make_plain (T)
+ 
+-    let create
++    let _create
+           ~bucket_size
+           ~(key_range : _ Collate.Which_range.t)
+           ~(rank_range : int Collate.Which_range.t)
+@@ -432,61 +430,21 @@ module Make (Incr : Incremental.S) = struct
+ 
+     let collate__sort_first
+           (type k v cmp filter order)
+-          ~filter_equal
+-          ~order_equal
+-          ?(order_cache_params =
+-            Store_params.alist_based__lru ~equal:order_equal ~max_size:10)
+-          ?(order_filter_cache_params =
+-            Store_params.alist_based__lru
+-              ~equal:(Tuple2.equal ~eq1:order_equal ~eq2:filter_equal)
+-              ~max_size:30)
+-          ?(order_filter_range_cache_params =
+-            Store_params.alist_based__lru
+-              ~equal:
+-                (Tuple3.equal
+-                   ~eq1:order_equal
+-                   ~eq2:filter_equal
+-                   ~eq3:Range_memoize_bucket.equal)
+-              ~max_size:50)
+-          ?(range_memoize_bucket_size = 10000)
++          ~filter_equal:_
++          ~order_equal:_
+           ~(filter_to_predicate : filter -> _)
+           ~(order_to_compare : order -> _)
+           (data : (k, v, cmp) Map.t Incr.t)
+           (collate : (k, filter, order) Collate.t Incr.t)
+       : (k, v) Collated.t Incr.t
+       =
+-      let cache_sorted = Store.create order_cache_params in
+-      let cache_sorted_filtered = Store.create order_filter_cache_params in
+-      let cache_sorted_filtered_ranked = Store.create order_filter_range_cache_params in
+       let%bind map_comparator = Incr.freeze (data >>| Map.comparator) in
+       let%pattern_bind { key_range; rank_range; filter; order } = collate in
+-      let range_bucket =
+-        (* Range operations are incremental with respect to the range, so we don't have
+-           to bind to ranges.
+-
+-           However, incrementality does not necessarily mean they're fast - they run in
+-           roughly O(|new ranks - old ranks|) or O(|new key position - old key position|).
+-           So, if we request two very different ranges one after another, the computation
+-           will be very expensive.
+-
+-           We alleviate this problem here by dividing possible ranges into buckets, and
+-           only using incremental computation when old & new belong to the same bucket.
+-
+-           We also keep a cache of a few least recently used buckets.
+-        *)
+-        let%map key_range = key_range
+-        and rank_range = rank_range in
+-        Range_memoize_bucket.create
+-          ~bucket_size:range_memoize_bucket_size
+-          ~key_range
+-          ~rank_range
+-      in
+       let orig_data = data in
+       let scope = Incr.Scope.current () in
+       let in_scope f = Incr.Scope.within scope ~f in
+       let%bind order = order
+-      and filter = filter
+-      and range_bucket = range_bucket in
++      and filter = filter in
+       (* This line causes the computation below to always be executed. This is fine,
+          as it consists only of cache lookups, which are cheap. And we want to execute
+          them to get more accurate LRU caches & hooks behaviour. *)
+@@ -495,16 +453,12 @@ module Make (Incr : Incremental.S) = struct
+       let%bind () = never_cutoff in
+       let compare = order_to_compare order in
+       let predicate = filter_to_predicate filter in
+-      let do_range ~sorted ~sorted_filtered =
++      let do_range ~sorted:_ ~sorted_filtered =
+         let sorted_filtered_ranked =
+           in_scope (fun () ->
+             let (Incr_collated_map.T sorted_filtered) = sorted_filtered in
+             do_range_restrict orig_data sorted_filtered ~key_range ~rank_range)
+         in
+-        Store.add
+-          cache_sorted_filtered_ranked
+-          ~key:(order, filter, range_bucket)
+-          ~value:(sorted, sorted_filtered, sorted_filtered_ranked);
+         sorted_filtered_ranked
+       in
+       let do_filter_range ~sorted =
+@@ -512,10 +466,6 @@ module Make (Incr : Incremental.S) = struct
+           let (Incr_collated_map.T sorted) = sorted in
+           in_scope (fun () -> do_filter_sorted sorted ~predicate) |> T
+         in
+-        Store.add
+-          cache_sorted_filtered
+-          ~key:(order, filter)
+-          ~value:(sorted, sorted_filtered);
+         do_range ~sorted ~sorted_filtered
+       in
+       let do_sort_filter_range () =
+@@ -523,7 +473,6 @@ module Make (Incr : Incremental.S) = struct
+         let sorted : _ Incr_collated_map.packed =
+           in_scope (fun () -> do_sort data ~map_comparator ~custom_comparator) |> T
+         in
+-        Store.add cache_sorted ~key:order ~value:sorted;
+         do_filter_range ~sorted
+       in
+       (* We implement "lazy eviction" here - we only allow ourselves to use a value from
+@@ -536,18 +485,7 @@ module Make (Incr : Incremental.S) = struct
+          This guarantees that, in presence of evicting from earlier layers, we won't
+          duplicate computations.
+       *)
+-      let sorted = Store.find cache_sorted order in
+-      let sorted_filtered = Store.find cache_sorted_filtered (order, filter) in
+-      let sorted_filtered_ranked =
+-        Store.find cache_sorted_filtered_ranked (order, filter, range_bucket)
+-      in
+-      match sorted, sorted_filtered, sorted_filtered_ranked with
+-      | Some s, Some (s', sf), Some (s'', sf', sfr)
+-        when phys_equal s s' && phys_equal s s'' && phys_equal sf sf' -> sfr
+-      | Some s, Some (s', sf), _ when phys_equal s s' ->
+-        do_range ~sorted:s ~sorted_filtered:sf
+-      | Some sorted, _, _ -> do_filter_range ~sorted
+-      | None, _, _ -> do_sort_filter_range ()
++      do_sort_filter_range ()
+     ;;
+   end
+ end
+diff --git b/vendor/janestreet-incr_map/collate/src/incr_map_collate.mli a/vendor/janestreet-incr_map/collate/src/incr_map_collate.mli
+index 2ceb63a..bc4bda9 100644
+--- b/vendor/janestreet-incr_map/collate/src/incr_map_collate.mli
++++ a/vendor/janestreet-incr_map/collate/src/incr_map_collate.mli
+@@ -2,7 +2,6 @@ open! Core
+ module Collate = Collate
+ module Collated = Collated
+ module Map_list = Map_list
+-module Store_params = Incr_memoize.Store_params
+ 
+ module Compare : sig
+   (** Note: [Unchanged] and [Reversed] is with respect to ['cmp]. *)
+@@ -78,13 +77,6 @@ module Make (Incr : Incremental.S) : sig
+     val collate__sort_first
+       :  filter_equal:('filter -> 'filter -> bool)
+       -> order_equal:('order -> 'order -> bool)
+-      -> ?order_cache_params:'order Store_params.t (** default: alist of size 10 *)
+-      -> ?order_filter_cache_params:('order * 'filter) Store_params.t
+-      (** default: alist of size 30 *)
+-      -> ?order_filter_range_cache_params:
+-           ('order * 'filter * Range_memoize_bucket.t) Store_params.t
+-      (** default: alist of size 50 *)
+-      -> ?range_memoize_bucket_size:int
+       -> filter_to_predicate:('filter -> (key:'k -> data:'v -> bool) option)
+       -> order_to_compare:('order -> ('k, 'v, 'cmp) Compare.t)
+       -> ('k, 'v, 'cmp) Map.t Incr.t
