@@ -1,0 +1,50 @@
+name: Publish
+
+on:
+  push:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+        ocaml-compiler:
+          - 4.12.x
+        refresh_packages:
+          - vendored_packages
+        build_cache:
+          - use_build_cache
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Cache things
+        uses: actions/cache@v2
+        with:
+          path: |
+            _opam 
+            _build
+          key: ${{ runner.os }}-${{ matrix.refresh_packages}}-2
+
+      - name: Apt Install Opam
+        run: sudo apt install opam && opam init
+
+      - name: Prepare
+        run: ./scripts/prepare_ci.sh
+
+      - name: Build My Things
+        run: opam exec -- dune build --display short @app/all
+
+      - name: Copy for Deployment
+        run: ./scripts/copy_for_deployment.sh
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_public
