@@ -73,10 +73,15 @@ let%test_module "toc" =
   (module struct
     let%expect_test "basic toc" =
       {|
-
 # a
+aaaa
+
 # b
+bbbb
+
 #### c
+cccccc
+
 # d
 ## d
 ### c
@@ -101,6 +106,52 @@ let%test_module "toc" =
                 -   b
             -   b
         -   x |}]
+    ;;
+
+    let%expect_test "basic toc" =
+      {|
+## a
+# b
+      |} |> parse |> Md.Toc.f |> unparse |> print_endline;
+      [%expect
+        {|
+        -   a
+        -   b |}]
+    ;;
+  end)
+;;
+
+let%test_module "group by header" =
+  (module struct
+    let%expect_test "basic toc" =
+      {|
+test test test
+
+# a
+sdsdf
+
+# b
+bbbbbbb
+
+## c
+cccccccc
+
+# d 
+ddddddd
+|}
+      |> parse
+      |> Md.Grouped_by_header.f
+      |> [%sexp_of: Md.Grouped_by_header.t list]
+      |> print_s;
+      [%expect
+        {|
+        ((Block (Para (Str test) Space (Str test) Space (Str test)))
+         (Header (title ((Str a))) (children ((Block (Para (Str sdsdf))))))
+         (Header (title ((Str b)))
+          (children
+           ((Block (Para (Str bbbbbbb)))
+            (Header (title ((Str c))) (children ((Block (Para (Str cccccccc)))))))))
+         (Header (title ((Str d))) (children ((Block (Para (Str ddddddd))))))) |}]
     ;;
   end)
 ;;

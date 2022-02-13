@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+VER="4.12.1"
+JS_BLEED_VER="cf2164a995a0d0577cd54beef5d2471e1a02f61f"
+
 ls
 opam switch create "./" "ocaml-base-compiler.$VER" --no-install || true
 eval $(opam env)

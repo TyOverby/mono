@@ -53,7 +53,56 @@ module Cat = struct
   ;;
 end
 
+module Grouped_by_header = struct
+  type t =
+    | Header of
+        { title : Pandoc.Inline.t list
+        ; children : t list
+        }
+    | Block of Pandoc.Block.t
+  [@@deriving sexp]
+
+  let list_item ~children c = Header { title = c; children }
+
+  let headers acc = function
+    | Pandoc.Block.Header (i, _, c) -> `H (i, c, []) :: acc
+    | block -> `B block :: acc
+  ;;
+
+  let rec loop = function
+    | [] -> [], []
+    | [ `B block ] -> [ Block block ], []
+    | [ `H (_, c, children) ] -> [ list_item c ~children ], []
+    | `H (a, c, children) :: (`H (b, _, _) :: _ as rest) when a < b ->
+      let lower, rest = loop rest in
+      loop (`H (a, c, children @ lower) :: rest)
+    | `H (a, c, children) :: (`B _ :: _ as rest) ->
+      let lower, rest = loop rest in
+      loop (`H (a, c, children @ lower) :: rest)
+    | `H (a, c, children) :: (`H (b, _, _) :: _ as rest) when a > b ->
+      [ list_item c ~children ], rest
+    | `H (_, c, children) :: rest ->
+      let same, higher = loop rest in
+      list_item c ~children :: same, higher
+    | `B b :: (`H _ :: _ as rest) -> [ Block b ], rest
+    | `B b :: xs ->
+      let same, higher = loop xs in
+      Block b :: same, higher
+  ;;
+
+  let rec loop' = function
+    | l, [] -> l
+    | l, r -> l @ loop' (loop r)
+  ;;
+
+  let f (ast : Pandoc.t) =
+    ast |> Pandoc.fold ~init:[] ~block:headers |> List.rev |> loop |> loop'
+  ;;
+end
+
 module Toc = struct
+  open Grouped_by_header
+
   let list l = Pandoc.Block.BulletList l
 
   let list_item ~children c =
@@ -62,30 +111,18 @@ module Toc = struct
     |> Pandoc.List_item.conceal
   ;;
 
-  let headers acc = function
-    | Pandoc.Block.Header (i, _, c) -> (i, c, []) :: acc
-    | _ -> acc
-  ;;
-
-  let rec loop = function
-    | [] -> [], []
-    | [ (_, c, children) ] -> [ list_item c ~children ], []
-    | (a, c, children) :: ((b, _, _) :: _ as rest) when a < b ->
-      let lower, rest = loop rest in
-      loop ((a, c, children @ lower) :: rest)
-    | (a, c, children) :: ((b, _, _) :: _ as rest) when a > b ->
-      [ list_item c ~children ], rest
-    | (_, c, children) :: rest ->
-      let same, higher = loop rest in
-      list_item c ~children :: same, higher
+  let rec to_bulleted_list = function
+    | Block _ -> None
+    | Header { title; children } ->
+      Some (list_item title ~children:(List.filter_map children ~f:to_bulleted_list))
   ;;
 
   let f (ast : Pandoc.t) =
     ast
-    |> Pandoc.fold ~init:[] ~block:headers
-    |> List.rev
-    |> loop
-    |> (fun (l, _) -> [ list l ])
+    |> Grouped_by_header.f
+    |> List.filter_map ~f:to_bulleted_list
+    |> list
+    |> List.return
     |> Pandoc.with_top_level_blocks ast
   ;;
 end
