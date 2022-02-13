@@ -29,7 +29,7 @@ jobs:
           path: |
             _opam 
             _build
-          key: ${{ runner.os }}-${{ matrix.refresh_packages}}-2
+          key: ${{ runner.os }}-${{ matrix.refresh_packages}}-publish
 
       - name: Apt Install Opam
         run: sudo apt install opam && opam init
@@ -38,7 +38,10 @@ jobs:
         run: ./scripts/prepare_ci.sh
 
       - name: Build My Things
-        run: opam exec -- dune build --display short @app/all
+        run: opam exec -- dune build --profile release --display short @app/all
+
+      - name: Build Documentation
+        run: opam exec -- dune build --profile release --display short @doc
 
       - name: Copy for Deployment
         run: ./scripts/copy_for_deployment.sh
