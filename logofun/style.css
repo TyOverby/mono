@@ -1,0 +1,80 @@
+:root {
+  font-family: sans-serif;  
+}
+
+body {
+  background: var(--gray-900);
+  padding: 0;
+  margin:0;
+}
+
+svg {
+  height:30px;
+  width:fit-content;
+}
+
+svg .l4 {
+  --fg: var(--gray-50);
+  --border: var(--gray-700);
+  --border-size:5px;
+  --extra-sep-size:2px;
+  font-weight:bold; 
+  user-select:none;
+  transform: translateX(5px);
+}
+
+@container (min-width: 700px){
+  .card {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  svg .l4>.foreground>g>*,
+  svg .l4>.backdrop>* {
+    --which: var(--idx);
+  }
+}
+
+@media (min-width: 600px) {
+  svg .l4>.foreground>g>*,
+  svg .l4>.backdrop>* {
+    --which: var(--odx);
+  }
+}
+
+svg .l4>.foreground>g>*,
+svg .l4>.backdrop>* {
+  transform: translateX(var(--which));
+	transition: transform 0.5s cubic-bezier(0.85, 0, 0.15, 1);
+}
+
+svg .l4 .backdrop {
+  fill: var(--border);
+  stroke: var(--border);
+  stroke-width: var(--border-size);
+  stroke-linejoin: round;
+  paint-order: stroke;
+}
+
+svg .l4 .backdrop text,
+svg .l4 .foreground circle {
+  fill: var(--border);
+}
+
+svg .l4 .foreground text {
+  fill: var(--fg);
+
+  stroke: var(--border);
+  stroke-width: var(--extra-sep-size);
+  stroke-linejoin: round;
+  paint-order: stroke;
+}
+
+
+
+g {
+/* transform: rotateY(180deg);*/
+}
+

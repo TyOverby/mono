@@ -1,0 +1,176 @@
+* {
+  padding: 0; 
+  margin: 0; 
+  box-sizing: border-box;
+}
+
+:root {
+  --day-min-width: 100px;
+  --day-of-week-width: 2rem;
+  /*--bg-color: rgba(45, 45, 45, 1);*/
+  --bg-color-transparent: rgba(45, 45, 45, 0.5);
+  --lighter-bg-color: #424242;
+  --day-gap: 3px;
+  --week-gap: 3px;
+
+  font-family: system-ui;
+}
+
+body {
+  background: var(--bg-color);
+  display:flex;
+  width:100vw;
+  height:100vh;
+  max-width:100vw;
+  max-height:100vh;
+  padding-top: var(--day-gap);
+  padding-bottom: var(--day-gap);
+}
+
+#day-of-week-container {
+  height: 100%;
+  max-height: 100%;
+  display: grid;
+
+  grid-template-rows: repeat(7, 1fr);
+  grid-template-columns: var(--day-of-week-width);
+  grid-auto-flow: column;
+
+  background: var(--bg-color);
+  color: rgba(45, 45, 45, 1);
+}
+
+#day-column {
+  overflow-x:auto;
+  overflow-y:none;
+  padding-right:var(--week-gap);
+}
+
+#day-container {
+  height: 100%;
+  max-height: 100%;
+
+  display: grid;
+  grid-row-gap: var(--day-gap);
+  grid-column-gap: var(--week-gap);
+  position:relative;
+
+  grid-template-rows: repeat(7, 1fr);
+  grid-template-columns: repeat(auto-fit, calc((100vh / 7) - var(--day-gap) / (7 / 8)));
+  grid-template-columns: repeat(auto-fit, minmax(calc((100vh / 7) - var(--day-gap) / (7 / 8)), 500px));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(calc((100vh / 7) - var(--day-gap) / (7 / 8)), 500px);
+  /* style */
+}
+
+.multi-day {
+    height: 355px;
+    position: absolute;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform-origin: center;
+    transform: rotate(180deg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.event {
+  font-size:0.8em;  
+  border:1px dashed var(--month-color-900);
+  margin-bottom:0.3em;
+  padding: 3px;
+  border-radius: 5px;
+  background-color: white;
+}
+
+.day, .day-of-month, 
+.day::-webkit-scrollbar-thumb
+{
+  border-radius: 4px;
+}
+
+.day {
+  background: var(--month-color-50); 
+  padding: 5px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 1px solid var(--month-color-900);
+  box-shadow: 0 0 10px 1.5px var(--month-color-100);
+}
+
+.day-of-month {
+  display: inline-block;
+  width: 1.5em;
+  height: 1.5em;
+  margin-right: -6px;
+  margin-top: -6px;
+  top: -6px;
+  position:sticky;
+  background: var(--month-color-300); 
+  color: white;
+  border: 1px solid var(--month-color-900); 
+
+  float:right;
+
+  border-radius:0;
+  border-bottom-left-radius: 4px;
+
+  display: flex; 
+  justify-content: center; 
+  align-items: center;
+}
+
+.day-of-month.new-month {
+  margin-left: -6px;
+  width: unset;
+  float: unset;
+
+  justify-content: space-between;
+  padding-right: 5px;
+  padding-left: 5px;
+  border-bottom-left-radius: 0em;
+  margin-bottom: 3px;
+}
+
+.day-label {
+  left: 0;
+  align-self: start;
+  height:100%;
+
+  overflow:hidden;
+
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+
+  transform-origin: center;
+  transform: rotate(180deg);
+
+  display: flex; 
+  justify-content: center; 
+  align-items: center;
+}
+
+
+
+/* width */
+.day::-webkit-scrollbar {
+  width: 5px;
+}
+
+/* Track */
+.day::-webkit-scrollbar-track {
+  background: var(--month-color-50);
+  --month-color-50:white;
+  background: 
+    repeating-linear-gradient(-45deg, 
+      var(--month-color-50), 
+      var(--month-color-50) 5px, 
+      var(--month-color-100) 5px, 
+      var(--month-color-100) 10px);
+}
+
+/* Handle */
+.day::-webkit-scrollbar-thumb {
+  background: transparent;
+}
