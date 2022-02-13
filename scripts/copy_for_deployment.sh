@@ -15,6 +15,6 @@ rsync \
 
 find _public \
   | grep index.html \
-  | sed 's:_public/\(\(.*\)/index.html\):<a href="\1"> \2 </a>:' \
+  | sed 's:_public/\(\(.*\)/index.html\):<a href="./\1"> \2 </a>:' \
   > _public/index.html
 
