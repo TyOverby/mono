@@ -160,6 +160,9 @@ body {
 
 /* Track */
 .day::-webkit-scrollbar-track {
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+
   background: var(--month-color-50);
   --month-color-50:white;
   background: 
