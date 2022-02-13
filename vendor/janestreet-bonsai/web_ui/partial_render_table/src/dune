@@ -1,4 +1,4 @@
-(library 
+(library
   (name bonsai_web_ui_partial_render_table)
   (public_name bonsai.web_ui_partial_render_table)
   (libraries bonsai_web core incr_map.collate bonsai_web_ui_element_size_hooks)

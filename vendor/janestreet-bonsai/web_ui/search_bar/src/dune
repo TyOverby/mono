@@ -1,5 +1,5 @@
-(library 
-  (name bonsai_web_ui_search_bar) 
-  (public_name bonsai.web_ui_search_bar) 
+(library
+  (name bonsai_web_ui_search_bar)
+  (public_name bonsai.web_ui_search_bar)
   (libraries bonsai_web core)
   (preprocess (pps ppx_jane js_of_ocaml-ppx ppx_pattern_bind)))

@@ -13,3 +13,5 @@ rm -rf tyxml
 get janestreet bonsai master
 apply_patches janestreet bonsai
 rm -rf experimental
+rm -rf web_ui/url_var
+rm -rf web_ui/partial_render_table/bench
