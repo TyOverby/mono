@@ -5,6 +5,9 @@
 rsync \
    -avzh \
    --prune-empty-dirs \
+   --exclude="*.cmo.js" \
+   --exclude="*.cma.js" \
+   --exclude="*.runtime.js" \
    --include "*/"  \
    --include="*.html" \
    --include="*.js" \
