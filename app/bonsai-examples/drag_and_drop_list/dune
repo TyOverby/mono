@@ -1,0 +1,5 @@
+(executables 
+ (names main)
+ (libraries bonsai.web bonsai.web_ui_reorderable_list)
+ (modes js)
+ (preprocess (pps ppx_jane ppx_css)))

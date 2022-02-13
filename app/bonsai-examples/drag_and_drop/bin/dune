@@ -1,0 +1,5 @@
+(executables 
+  (names main) 
+  (libraries bonsai.web bonsai_drag_and_drop_example)
+  (modes js)
+ (preprocess (pps ppx_jane)))

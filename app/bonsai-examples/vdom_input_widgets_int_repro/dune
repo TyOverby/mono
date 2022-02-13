@@ -1,0 +1,3 @@
+(executables (names main) (libraries bonsai.web virtual_dom.input_widgets)
+(modes js)
+ (preprocess (pps ppx_jane)))

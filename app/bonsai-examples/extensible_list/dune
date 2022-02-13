@@ -1,0 +1,4 @@
+(executables (names main)
+ (libraries bonsai.web bonsai.web_ui_extendy bonsai_web_counters_example)
+ (modes js)
+ (preprocess (pps ppx_jane ppx_pattern_bind)))

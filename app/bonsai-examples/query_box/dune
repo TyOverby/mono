@@ -1,0 +1,5 @@
+(executables (names main)
+ (libraries bonsai.web bonsai.web_ui_query_box bonsai.web_ui_form
+  fuzzy_match)
+(modes js)
+ (preprocess (pps ppx_jane ppx_css ppx_typed_fields)))

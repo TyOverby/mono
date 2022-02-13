@@ -1,0 +1,4 @@
+(executables (names main)
+ (libraries bonsai.web bonsai.web_ui_element_size_hooks)
+ (modes js)
+ (preprocess (pps ppx_jane ppx_css)))

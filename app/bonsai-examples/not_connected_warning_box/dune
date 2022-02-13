@@ -1,0 +1,4 @@
+(executables (names main)
+ (libraries bonsai.web bonsai.web_ui_not_connected_warning_box)
+(modes js)
+ (preprocess (pps ppx_jane)))

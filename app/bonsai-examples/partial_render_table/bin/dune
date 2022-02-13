@@ -1,0 +1,4 @@
+(executables (names main)
+ (libraries bonsai.web bonsai_partial_render_table_example)
+(modes js)
+ (preprocess (pps ppx_jane)))

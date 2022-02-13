@@ -1,0 +1,4 @@
+(executables (names main)
+ (libraries incr_dom bonsai.web bonsai_web_counters_example)
+ (modes js)
+ (preprocess (pps js_of_ocaml-ppx ppx_jane)))
