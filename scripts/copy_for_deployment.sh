@@ -16,7 +16,8 @@ rsync \
    ./_public
 
 
-echo '<li><a href="./ocaml-docs/index.html">OCaml Docs</a></li>' > index.html
+echo '<title>Ty Overby - Monorepo</title>' > _public/out.html
+echo '<li><a href="./ocaml-docs/index.html">OCaml Docs</a></li>' >> _public/out.html
 
 find _public \
   | grep index.html \
