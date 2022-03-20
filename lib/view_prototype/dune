@@ -1,0 +1,5 @@
+(library
+ (name view_p)
+ (libraries core)
+ (preprocess
+  (pps ppx_jane)))
