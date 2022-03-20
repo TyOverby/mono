@@ -48,21 +48,34 @@ module type Translate = sig
   module S2 : S
   module Acc : T
 
-  val escape : Acc.t -> S1.Env.escape -> S2.Env.escape
-  val button_click : Acc.t -> S1.Env.button_click -> S2.Env.button_click
-  val ext : Acc.t -> S1.Env.ext -> S2.Env.ext
+  val escape : Acc.t -> S1.Env.escape -> Acc.t * S2.Env.escape
+  val button_click : Acc.t -> S1.Env.button_click -> Acc.t * S2.Env.button_click
+  val ext : Acc.t -> S1.Env.ext -> Acc.t * S2.Env.ext
 end
 
 module Translate (S1 : S) (S2 : S) (T : Translate with module S1 = S1 and module S2 = S2) =
 struct
-  let rec tr_t : T.Acc.t -> S1.t -> S2.t =
-   fun acc { inner; ext } -> { inner = tr_kind acc inner; ext = T.ext acc ext }
+  let rec tr_t : T.Acc.t -> S1.t -> T.Acc.t * S2.t =
+   fun acc { inner; ext } ->
+    let acc, inner = tr_kind acc inner in
+    let acc, ext = T.ext acc ext in
+    acc, { inner; ext }
 
-  and tr_kind : T.Acc.t -> S1.kind -> S2.kind =
+  and tr_kind : T.Acc.t -> S1.kind -> T.Acc.t * S2.kind =
    fun acc -> function
-    | Escape t -> Escape (T.escape acc t)
-    | Hbox ts -> Hbox (List.map ts ~f:(tr_t acc))
-    | Vbox ts -> Vbox (List.map ts ~f:(tr_t acc))
-    | Button { on_click; text } -> Button { on_click = T.button_click acc on_click; text }
+    | Escape t ->
+      let acc, esc = T.escape acc t in
+      acc, Escape esc
+    | Hbox ts ->
+      let acc, ts = List.fold_map ts ~init:acc ~f:tr_t in
+      acc, Hbox ts
+    | Vbox ts ->
+      let acc, ts = List.fold_map ts ~init:acc ~f:tr_t in
+      acc, Vbox ts
+    | Button { on_click; text } ->
+      let acc, on_click = T.button_click acc on_click in
+      acc, Button { on_click; text }
  ;;
+
+  let translate ~init t = tr_t init t
 end
