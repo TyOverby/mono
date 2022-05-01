@@ -1,0 +1,6 @@
+(library
+ (name braid)
+ (libraries core core_kernel.uopt)
+ (flags (-w -34))
+ (preprocess
+  (pps ppx_jane)))

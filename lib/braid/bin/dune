@@ -1,0 +1,7 @@
+(executables
+ (names main)
+ (libraries braid core_kernel.uopt core)
+ (modes js)
+ (js_of_ocaml (flags --enable use-js-string))
+ (preprocess
+  (pps ppx_jane)))
