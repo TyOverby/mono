@@ -34,7 +34,7 @@ function make_switch() {
 
 make_switch "$TOOLS_DIR"
 eval $(opam env)
-opam install -y ocamlformat ocamlformat-rpc ocaml-lsp-server
+opam install -y ocamlformat ocamlformat-rpc ocaml-lsp-server merlin
 
 make_switch "$PROJECT_DIR"
 eval $(opam env)

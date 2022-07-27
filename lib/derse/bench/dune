@@ -1,0 +1,4 @@
+(executables
+ (names main)
+ (libraries durse derse_test core core_bench.runner)
+ (preprocess (pps ppx_jane)))
