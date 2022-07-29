@@ -63,7 +63,6 @@ module Arr = struct
       | { a = Constant a; f } -> mid, attempt (fun () -> f a)
       | { a = Exception _ as exn; _ } -> mid, exn
       | { a = Node n; f } -> rewrap (Mid.map mid n ~f))
-    (* Arr 2 *)
     | Arr2 t ->
       (match t with
       | { a = Constant a; b = Constant b; f } -> mid, attempt (fun () -> f a b)
@@ -101,6 +100,7 @@ module Arr = struct
       | { a = _; b = _; c = Exception _ as exn; _ } -> mid, exn
       | { a = _; b = _; c = _; d = Exception _ as exn; _ } -> mid, exn
       | { a; b; c; d; f } ->
+        (* This is the point where ty gave up *)
         let mid, a = to_node mid a in
         let mid, b = to_node mid b in
         let mid, c = to_node mid c in
@@ -139,3 +139,5 @@ let rec lower : type a. Mid.t -> a t -> Mid.t * a =
     let mid, r = lower mid a in
     lower mid (f r)
 ;;
+
+let lower t = lower Mid.empty t
