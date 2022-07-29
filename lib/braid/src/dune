@@ -3,7 +3,9 @@
  (libraries 
    core 
    core_kernel.uopt
-   textutils.ascii_table_kernel)
+   textutils.ascii_table_kernel
+   core_kernel.pairing_heap
+   )
  (flags (-w -34))
  (preprocess
   (pps ppx_jane)))
