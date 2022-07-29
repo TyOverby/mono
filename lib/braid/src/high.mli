@@ -8,6 +8,7 @@ type 'a t
 
 val return : 'a -> 'a t
 val const : 'a -> 'a Value.t t
+val const_node : 'a -> 'a Value.t t
 val arr1 : 'a Value.t -> f:('a -> 'b) -> 'b Value.t t
 val arr2 : 'a Value.t -> 'b Value.t -> f:('a -> 'b -> 'c) -> 'c Value.t t
 
@@ -27,4 +28,23 @@ val arr4
   -> 'e Value.t t
 
 val bind : 'a t -> f:('a -> 'b t) -> 'b t
-val lower : 'a Value.t t -> Mid.t * 'a Value.t
+
+module Let_syntax : sig
+  module Let_syntax : sig
+    val bind : 'a t -> f:('a -> 'b t) -> 'b t
+    val return : 'a -> 'a t
+  end
+end
+
+module Expert : sig
+  module Value_or_node : sig
+    type 'a t =
+      | Constant of 'a
+      | Exception of exn
+      | Node of 'a Mid.Node.t
+  end
+
+  type lookup = { f : 'a. 'a Value.t -> 'a Value_or_node.t }
+
+  val lower : 'a t -> Mid.t * lookup * 'a
+end
