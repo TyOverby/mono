@@ -86,8 +86,11 @@ module Arr = struct
       Mid.map mid const ~f:(fun () -> raise exn)
   ;;
 
-  let eval : type a. Mid.t -> Env.t -> a t -> Mid.t * a Value_or_node.t =
-   fun mid env t ->
+  let eval
+      : type a.
+        ?sexp_of:(a -> Sexp.t) -> Mid.t -> Env.t -> a t -> Mid.t * a Value_or_node.t
+    =
+   fun ?sexp_of mid env t ->
     match t with
     | Arr1 t ->
       (match t with
@@ -95,7 +98,7 @@ module Arr = struct
       | { a = Exception exn; _ } -> mid, Exception exn
       | { a = Name a; f } ->
         let n = Env.find_exn env a in
-        rewrap (Mid.map mid n ~f))
+        rewrap (Mid.map ?sexp_of mid n ~f))
     | Arr2 t ->
       (match t with
       | { a = Constant a; b = Constant b; f } -> mid, attempt (fun () -> f a b)
@@ -103,14 +106,14 @@ module Arr = struct
       | { a = _; b = Exception exn; _ } -> mid, Exception exn
       | { a = Constant a; b = Name b; f } ->
         let b = Env.find_exn env b in
-        rewrap (Mid.map mid b ~f:(fun b -> f a b))
+        rewrap (Mid.map ?sexp_of mid b ~f:(fun b -> f a b))
       | { a = Name a; b = Constant b; f } ->
         let a = Env.find_exn env a in
-        rewrap (Mid.map mid a ~f:(fun a -> f a b))
+        rewrap (Mid.map ?sexp_of mid a ~f:(fun a -> f a b))
       | { a = Name a; b = Name b; f } ->
         let a = Env.find_exn env a in
         let b = Env.find_exn env b in
-        rewrap (Mid.map2 mid a b ~f))
+        rewrap (Mid.map2 ?sexp_of mid a b ~f))
     | Arr3 t ->
       (match t with
       | { a = Constant a; b = Constant b; c = Constant c; f } ->
@@ -122,28 +125,28 @@ module Arr = struct
         let a = Env.find_exn env a in
         let b = Env.find_exn env b in
         let c = Env.find_exn env c in
-        rewrap (Mid.map3 mid a b c ~f)
+        rewrap (Mid.map3 ?sexp_of mid a b c ~f)
       | { a = Constant a; b = Name b; c = Name c; f } ->
         let b = Env.find_exn env b in
         let c = Env.find_exn env c in
-        rewrap (Mid.map2 mid b c ~f:(fun b c -> f a b c))
+        rewrap (Mid.map2 ?sexp_of mid b c ~f:(fun b c -> f a b c))
       | { a = Name a; b = Constant b; c = Name c; f } ->
         let a = Env.find_exn env a in
         let c = Env.find_exn env c in
-        rewrap (Mid.map2 mid a c ~f:(fun a c -> f a b c))
+        rewrap (Mid.map2 ?sexp_of mid a c ~f:(fun a c -> f a b c))
       | { a = Name a; b = Name b; c = Constant c; f } ->
         let a = Env.find_exn env a in
         let b = Env.find_exn env b in
-        rewrap (Mid.map2 mid a b ~f:(fun a b -> f a b c))
+        rewrap (Mid.map2 ?sexp_of mid a b ~f:(fun a b -> f a b c))
       | { a = Name a; b = Constant b; c = Constant c; f } ->
         let a = Env.find_exn env a in
-        rewrap (Mid.map mid a ~f:(fun a -> f a b c))
+        rewrap (Mid.map ?sexp_of mid a ~f:(fun a -> f a b c))
       | { a = Constant a; b = Name b; c = Constant c; f } ->
         let b = Env.find_exn env b in
-        rewrap (Mid.map mid b ~f:(fun b -> f a b c))
+        rewrap (Mid.map ?sexp_of mid b ~f:(fun b -> f a b c))
       | { a = Constant a; b = Constant b; c = Name c; f } ->
         let c = Env.find_exn env c in
-        rewrap (Mid.map mid c ~f:(fun c -> f a b c)))
+        rewrap (Mid.map ?sexp_of mid c ~f:(fun c -> f a b c)))
     | Arr4 t ->
       (match t with
       | { a = Constant a; b = Constant b; c = Constant c; d = Constant d; f } ->
@@ -158,7 +161,7 @@ module Arr = struct
         let mid, b = to_node ~env mid b in
         let mid, c = to_node ~env mid c in
         let mid, d = to_node ~env mid d in
-        rewrap (Mid.map4 mid a b c d ~f))
+        rewrap (Mid.map4 ?sexp_of mid a b c d ~f))
  ;;
 end
 
@@ -200,12 +203,12 @@ let rec lower : type a. Mid.t -> Env.t -> a t -> Mid.t * Env.t * a =
  fun mid env t ->
   match t with
   | Return a -> mid, env, a
-  | Const a -> mid, env, Value.Constant a
+  | Const a -> mid, env, Constant a
   | Actually_const a ->
     let mid, node = Arr.to_node mid ~env (Constant a) in
     let name = Name.create () in
     let env = Env.set env name node in
-    mid, env, Value.Name name
+    mid, env, Name name
   | Arr arr ->
     let mid, value_or_node = Arr.eval mid env arr in
     let value, env = Value_or_node.to_value env value_or_node in
@@ -222,7 +225,7 @@ let rec lower : type a. Mid.t -> Env.t -> a t -> Mid.t * Env.t * a =
       let mid, res = Mid.if_ mid cond ~then_ ~else_ in
       let name = Name.create () in
       let env = Env.set env name res in
-      mid, env, Value.Name name)
+      mid, env, Name name)
   | Bind { a; f } ->
     let mid, env, r = lower mid env a in
     lower mid env (f r)

@@ -68,7 +68,7 @@ module Node = struct
     type 'a node = 'a t
 
     module T = struct
-      type t = T : 'a node -> t
+      type t = T : 'a node -> t [@@unpacked]
 
       let sexp_of_t (T t) = sexp_of_t sexp_of_opaque t
 
@@ -351,8 +351,10 @@ let map4 ?name ?sexp_of t a b c d ~f =
       fun () -> f (a_value ()) (b_value ()) (c_value ()) (d_value ()))
 ;;
 
-let if_ t cond ~then_:a ~else_:b =
-  let sexp_of_out = Option.first_some a.Node.sexp_of b.Node.sexp_of in
+let if_ ?sexp_of t cond ~then_:a ~else_:b =
+  let sexp_of_out =
+    Option.first_some sexp_of (Option.first_some a.Node.sexp_of b.Node.sexp_of)
+  in
   let rec t__in__out =
     lazy
       (let mid, if_in =

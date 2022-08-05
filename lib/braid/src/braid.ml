@@ -2,7 +2,16 @@ open! Core
 include Braid_intf
 include High
 
-module type Universe = Braid_intf.Universe with module Value := Value
+module Var = struct
+  type 'a t = 'a Value.t
+
+  let read = Fn.id
+end
+
+let var a = High.const_node a
+
+module type Universe =
+  Braid_intf.Universe with module Value := Value with module Var := Var
 
 let compile t =
   let mid, mid_lookup, res = High.Expert.lower t in
@@ -62,12 +71,10 @@ let compile t =
         | Node v_mid ->
           let v_low = low_lookup.f v_mid in
           stage (fun value -> Low.Node.write_value low v_low value)
-        | Constant _ ->
-          (* that's an issue... *)
-          stage (fun _ -> assert false)
-        | Exception _ ->
-          (* that's an issue... *)
-          stage (fun _ -> ())
+        | Constant _ | Exception _ ->
+          (* unreachable because [set] can only be called on a 
+             var, which is created by [const_node] *)
+          assert false
       ;;
     end : Universe)
   in

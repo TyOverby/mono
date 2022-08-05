@@ -13,8 +13,8 @@ let bench_braid t =
 
 let single_addition () =
   bench_braid
-    (let%bind a = const_node 0 in
-     let%bind b = arr1 a ~f:(fun a -> a + 1) in
+    (let%bind a = var 0 in
+     let%bind b = arr1 (Var.read a) ~f:(fun a -> a + 1) in
      return (a, b))
 ;;
 
@@ -27,8 +27,8 @@ let n_additions n () =
       make (i - 1) me)
   in
   bench_braid
-    (let%bind a = const_node 0 in
-     let%bind b = make n a in
+    (let%bind a = var 0 in
+     let%bind b = make n (Var.read a) in
      return (a, b))
 ;;
 
@@ -48,8 +48,8 @@ let tree n () =
       arr2 left right ~f:(fun a b -> a + b))
   in
   let t =
-    let%bind a = const_node 0 in
-    let%bind b = make n a in
+    let%bind a = var 0 in
+    let%bind b = make n (Var.read a) in
     return (a, b)
   in
   bench_braid t

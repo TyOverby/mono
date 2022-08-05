@@ -16,7 +16,7 @@ module Node : sig
 
   module Packed : sig
     type 'a node := 'a t
-    type t = T : 'a node -> t
+    type t = T : 'a node -> t [@@unpacked]
 
     include Comparable.S_plain with type t := t
   end
@@ -65,7 +65,13 @@ val map4
   -> f:('a -> 'b -> 'c -> 'd -> 'r)
   -> t * 'r Node.t
 
-val if_ : t -> bool Node.t -> then_:'a Node.t -> else_:'a Node.t -> t * 'a Node.t
+val if_
+  :  ?sexp_of:('a -> Sexp.t)
+  -> t
+  -> bool Node.t
+  -> then_:'a Node.t
+  -> else_:'a Node.t
+  -> t * 'a Node.t
 
 module Expert : sig
   type lookup = { f : 'a. 'a Node.t -> 'a Low.Node.t }
