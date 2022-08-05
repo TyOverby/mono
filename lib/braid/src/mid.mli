@@ -1,5 +1,14 @@
 open! Core
 
+module Priority : sig
+  type kind = Switch
+  type t
+
+  val neutral : t
+  val reward : kind -> t
+  val punish : kind -> t
+end
+
 module Node : sig
   type !'a t
 
@@ -56,6 +65,8 @@ val map4
   -> f:('a -> 'b -> 'c -> 'd -> 'r)
   -> t * 'r Node.t
 
+val if_ : t -> bool Node.t -> then_:'a Node.t -> else_:'a Node.t -> t * 'a Node.t
+
 module Expert : sig
   type lookup = { f : 'a. 'a Node.t -> 'a Low.Node.t }
 
@@ -72,8 +83,7 @@ module Expert : sig
   val add
     :  ?name:string
     -> ?sexp_of:('a -> Sexp.t)
-    -> ?priority:bool
-    -> ?computes_after:Node.Packed.t list
+    -> ?priority:Priority.t
     -> t
     -> depends_on:Node.Packed.t list
     -> compute:(ops -> me:'a Node.t -> unit -> 'a)

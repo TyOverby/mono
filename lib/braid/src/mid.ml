@@ -1,5 +1,39 @@
 open! Core
 
+module Priority = struct
+  type kind = Switch [@@deriving compare, sexp_of]
+
+  type t =
+    | Reward of kind
+    | Neutral of int
+    | Punish of kind
+  [@@deriving sexp_of]
+
+  let multi_compare first ~fallback = if first = 0 then fallback else first
+
+  let compare (a, a_id) (b, b_id) =
+    let by_id = compare_int a_id b_id in
+    match a, b with
+    | Reward ak, Reward bk ->
+      let by_kind = compare_kind ak bk in
+      multi_compare by_kind ~fallback:by_id
+    | Neutral ad, Neutral bd ->
+      let by_dist = compare_int ad bd in
+      multi_compare (-by_dist) ~fallback:by_id
+    | Punish ak, Punish bk ->
+      let by_kind = compare_kind ak bk in
+      multi_compare (-by_kind) ~fallback:(-by_id)
+    | Reward _, Neutral _ | Reward _, Punish _ -> -1
+    | Punish _, Neutral _ | Punish _, Reward _ -> 1
+    | Neutral _, Reward _ -> 1
+    | Neutral _, Punish _ -> -1
+  ;;
+
+  let neutral = Neutral 0
+  let reward kind = Reward kind
+  let punish kind = Punish kind
+end
+
 module Node = struct
   module Id = struct
     type t = int [@@deriving sexp_of]
@@ -64,9 +98,8 @@ type t =
   ; nodes : Node.Packed.Set.t
   ; depends_on : Node.Packed.Set.t Node.Packed.Map.t
   ; depended_on_by : Node.Packed.Set.t Node.Packed.Map.t
-  ; computes_after : Node.Packed.Set.t Node.Packed.Map.t
-  ; computed_before : Node.Packed.Set.t Node.Packed.Map.t
   ; priority : Node.Packed.Set.t
+  ; priorities : Priority.t Node.Packed.Map.t
   }
 
 let empty =
@@ -74,13 +107,37 @@ let empty =
   ; nodes = Node.Packed.Set.empty
   ; depends_on = Node.Packed.Map.empty
   ; depended_on_by = Node.Packed.Map.empty
-  ; computes_after = Node.Packed.Map.empty
-  ; computed_before = Node.Packed.Map.empty
   ; priority = Node.Packed.Set.empty
+  ; priorities = Node.Packed.Map.empty
   }
 ;;
 
-let add ?name ?sexp_of ?(priority = false) ?(computes_after = []) t ~depends_on ~compute =
+let rec propagate_priorities (t : t) (T node : Node.Packed.t) ~priority =
+  let continue, priorities =
+    match Map.find t.priorities (T node) with
+    | None -> true, Map.set t.priorities (T node) priority
+    | Some p' when Priority.compare (priority, node.id) (p', node.id) < 1 ->
+      true, Map.set t.priorities (T node) priority
+    | Some _ -> false, t.priorities
+  in
+  let t = { t with priorities } in
+  let continue, subsequent_priorities =
+    match priority with
+    | Priority.Reward _ -> continue, Priority.Neutral 0
+    | Neutral i -> continue, Neutral (i + 1)
+    | Punish _ -> false, Neutral 0
+  in
+  if continue
+  then
+    Map.find t.depends_on (T node)
+    |> Option.value ~default:Node.Packed.Set.empty
+    |> Set.fold ~init:t ~f:(fun t node ->
+           propagate_priorities t node ~priority:subsequent_priorities)
+  else t
+;;
+
+let add ?name ?sexp_of ?(priority = Priority.Neutral Int.max_value) t ~depends_on ~compute
+  =
   let id = t.cur_id in
   let node = Node.create ?name ?sexp_of id ~compute in
   let nodes = Set.add t.nodes (T node) in
@@ -90,65 +147,69 @@ let add ?name ?sexp_of ?(priority = false) ?(computes_after = []) t ~depends_on 
             | None -> Node.Packed.Set.singleton (T node)
             | Some set -> Set.add set (T node)))
   in
-  let computed_before =
-    List.fold computes_after ~init:t.computed_before ~f:(fun acc dep ->
-        Map.update acc dep ~f:(function
-            | None -> Node.Packed.Set.singleton (T node)
-            | Some set -> Set.add set (T node)))
-  in
   let depends_on =
     Map.add_exn t.depends_on (T node) (Node.Packed.Set.of_list depends_on)
   in
-  let computes_after =
-    Map.add_exn t.computes_after (T node) (Node.Packed.Set.of_list computes_after)
+  let p =
+    match priority with
+    | Reward _ -> Set.add t.priority (T node)
+    | _ -> t.priority
   in
-  let p = if priority then Set.add t.priority (T node) else t.priority in
   let t =
     { cur_id = id + 1
     ; nodes
     ; depends_on
     ; depended_on_by
-    ; computes_after
-    ; computed_before
+    ; priorities = t.priorities
     ; priority = p
     }
   in
+  let t = propagate_priorities t (T node) ~priority in
   t, node
 ;;
 
+(*
 let compute_distance_from_priority_nodes { nodes; depends_on; priority; _ } =
   (* TODO: should computes_after be factored into the distance calculation?  *)
-  let rec traverse ~map ~node ~distance =
-    match Map.find map node with
-    | Some d' when d' <= distance -> map
-    | Some _ | None ->
-      let map = Map.set map node distance in
+  let rec traverse ~(map : (_, Priority.t, _) Map.t) ~node ~distance =
+    let continue map ~distance =
       Map.find depends_on node
       |> Option.value ~default:Node.Packed.Set.empty
-      |> Set.fold ~init:map ~f:(fun map node ->
-             traverse ~map ~node ~distance:(distance + 1))
+      |> Set.fold ~init:map ~f:(fun map node -> traverse ~map ~node ~distance)
+    in
+    match Map.find map node with
+    | Some (Reward _ as p) ->
+      let map = Map.set map node p in
+      continue map ~distance:0
+    | Some (Punish _ as p) ->
+      let map = Map.set map node p in
+      continue map ~distance:(distance + 1)
+    | Some (Neutral d') when d' <= distance -> map
+    | Some (Neutral _) | None ->
+      let map = Map.set map node (Neutral distance) in
+      continue map ~distance:(distance + 1)
   in
-  let distance_map = Map.of_key_set nodes ~f:(fun _ -> Int.max_value) in
+  let distance_map = Map.of_key_set nodes ~f:(fun (T node) -> node.priority) in
   Set.fold priority ~init:distance_map ~f:(fun map node ->
       traverse ~map ~node ~distance:0)
 ;;
+*)
 
-let toposort t ~nodes ~priorities =
+let toposort t ~nodes =
   let q =
-    let cmp =
-      Comparable.lexicographic
-        [ Comparable.lift [%compare: int] ~f:(Map.find_exn priorities)
-        ; Comparable.lift [%compare: int] ~f:(fun (Node.Packed.T node) -> node.id)
-        ]
+    let cmp (Node.Packed.T n1) (Node.Packed.T n2) =
+      let p1 = Map.find_exn t.priorities (T n1) in
+      let p2 = Map.find_exn t.priorities (T n2) in
+      let i1 = n1.id in
+      let i2 = n2.id in
+      Priority.compare (p1, i1) (p2, i2)
     in
     Pairing_heap.create ~cmp ()
   in
   let seen = ref Node.Packed.Set.empty in
   let enqueue_all nodes =
     Set.iter nodes ~f:(fun node ->
-        let depends_on =
-          Set.union (Map.find_exn t.depends_on node) (Map.find_exn t.computes_after node)
-        in
+        let depends_on = Map.find_exn t.depends_on node in
         if Set.is_empty (Set.diff depends_on !seen) then Pairing_heap.add q node)
   in
   enqueue_all nodes;
@@ -159,9 +220,8 @@ let toposort t ~nodes ~priorities =
     | Some node ->
       out := node :: !out;
       seen := Set.add !seen node;
-      [ Map.find t.depended_on_by node; Map.find t.computed_before node ]
-      |> List.filter_opt
-      |> Node.Packed.Set.union_list
+      Map.find t.depended_on_by node
+      |> Option.value ~default:Node.Packed.Set.empty
       |> enqueue_all;
       loop ()
   in
@@ -190,8 +250,8 @@ module Expert = struct
   let add = add
 
   let lower t =
-    let priorities = compute_distance_from_priority_nodes t in
-    let in_order = toposort t ~nodes:t.nodes ~priorities in
+    (*let priorities = compute_distance_from_priority_nodes t in *)
+    let in_order = toposort t ~nodes:t.nodes in
     let low = Low.create ~length:t.cur_id in
     let id_mappings = ref Node.Packed.Map.empty in
     List.iter in_order ~f:(fun (Node.Packed.T node) ->
@@ -289,4 +349,74 @@ let map4 ?name ?sexp_of t a b c d ~f =
       let c_value = value c in
       let d_value = value d in
       fun () -> f (a_value ()) (b_value ()) (c_value ()) (d_value ()))
+;;
+
+let if_ t cond ~then_:a ~else_:b =
+  let sexp_of_out = Option.first_some a.Node.sexp_of b.Node.sexp_of in
+  let rec t__in__out =
+    lazy
+      (let mid, if_in =
+         add
+           t
+           ~name:"if-in"
+           ~depends_on:[ T cond ]
+           ~sexp_of:[%sexp_of: bool]
+           ~priority:(Priority.reward Switch)
+           ~compute:(fun ops ~me ->
+             let incr_a = ops.incr_refcount a in
+             let incr_b = ops.incr_refcount b in
+             let decr_a = ops.decr_refcount a in
+             let decr_b = ops.decr_refcount b in
+             let (lazy (_, _, switch_out)) = t__in__out in
+             let mark_switch_out_dirty = ops.mark_dirty switch_out in
+             let i_have_value = ops.has_value me in
+             let my_previous_value = ops.value me in
+             let cond_value = ops.value cond in
+             fun () ->
+               let prev_valid, prev =
+                 if i_have_value () then true, my_previous_value () else false, true
+               in
+               let next = cond_value () in
+               let should_dirty =
+                 match prev_valid, prev, next with
+                 | false, _, true ->
+                   incr_a ();
+                   false
+                 | false, _, false ->
+                   incr_b ();
+                   false
+                 | true, true, true -> false
+                 | true, false, false -> false
+                 | true, true, false ->
+                   decr_a ();
+                   incr_b ();
+                   true
+                 | true, false, true ->
+                   decr_b ();
+                   incr_a ();
+                   true
+               in
+               if should_dirty then mark_switch_out_dirty ();
+               next)
+       in
+       let mid, if_out =
+         add
+           mid
+           ~name:"if-out"
+           ~depends_on:[ T if_in ]
+           ?sexp_of:sexp_of_out
+           ~priority:(Priority.punish Switch)
+           ~compute:(fun ops ~me:_ ->
+             let a_value = ops.value a in
+             let b_value = ops.value b in
+             let in_value = ops.value if_in in
+             fun () ->
+               match in_value () with
+               | true -> a_value ()
+               | false -> b_value ())
+       in
+       mid, if_in, if_out)
+  in
+  let (lazy (t, if_in, if_out)) = t__in__out in
+  t, if_out
 ;;

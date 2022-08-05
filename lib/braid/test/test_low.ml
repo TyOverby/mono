@@ -1,5 +1,5 @@
 open! Core
-open! Braid
+open! Braid.Private
 
 let print_env env = print_endline (Low.debug env)
 

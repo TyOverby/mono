@@ -1,5 +1,5 @@
 open! Core
-open! Braid
+open! Braid.Private
 
 let print_env env = print_endline (Low.debug env)
 
@@ -99,7 +99,7 @@ let%expect_test "if" =
            ~name:"switch in"
            ~sexp_of:[%sexp_of: int]
            ~depends_on:[ T cond ]
-           ~priority:true
+           ~priority:(Mid.Priority.reward Switch)
            ~compute:(fun ops ~me ->
              let incr_a = ops.incr_refcount a in
              let incr_b = ops.incr_refcount b in
@@ -135,7 +135,7 @@ let%expect_test "if" =
            ~name:"switch out"
            ~sexp_of:[%sexp_of: string]
            ~depends_on:[ T switch_in ]
-           ~computes_after:[ T a; T b ]
+           ~priority:(Mid.Priority.punish Switch)
            ~compute:(fun ops ~me:_ ->
              let a_value = ops.value a in
              let b_value = ops.value b in
@@ -199,4 +199,60 @@ let%expect_test "pretty addition" =
   let mid, c = Mid.map2 mid ~name:"c" ~sexp_of:[%sexp_of: int] a b ~f:( + ) in
   compile_and_compute mid c;
   [%expect {| 5 |}]
+;;
+
+let%expect_test "pretty if" =
+  let mid = Mid.empty in
+  let mid, cond = Mid.const mid ~name:"cond" ~sexp_of:[%sexp_of: bool] true in
+  let mid, a = Mid.const mid ~name:"a" ~sexp_of:[%sexp_of: int] 3 in
+  let mid, a' = Mid.map mid ~name:"a'" ~sexp_of:[%sexp_of: int] a ~f:(fun a -> a + 1) in
+  let mid, b = Mid.const mid ~name:"b" ~sexp_of:[%sexp_of: int] 5 in
+  let mid, b' = Mid.map mid ~name:"b'" ~sexp_of:[%sexp_of: int] b ~f:(fun a -> a + 1) in
+  let mid, out = Mid.if_ mid cond ~then_:a ~else_:b in
+  (* *)
+  let low, lookup = Mid.Expert.lower mid in
+  print_env low;
+  [%expect
+    {|
+    ┌───┬────────┬─────────┬───┬───┐
+    │ # │ @      │ V       │ ? │ R │
+    ├───┼────────┼─────────┼───┼───┤
+    │ 0 │ cond   │ <empty> │ x │ 0 │
+    │ 1 │ if-in  │ <empty> │ x │ 0 │
+    │ 2 │ a      │ <empty> │ x │ 0 │
+    │ 3 │ a'     │ <empty> │ x │ 0 │
+    │ 4 │ b      │ <empty> │ x │ 0 │
+    │ 5 │ b'     │ <empty> │ x │ 0 │
+    │ 6 │ if-out │ <empty> │ x │ 0 │
+    └───┴────────┴─────────┴───┴───┘ |}];
+  Low.Node.incr_refcount low (lookup.f out);
+  print_env low;
+  [%expect
+    {|
+    ┌───┬────────┬─────────┬───┬───┐
+    │ # │ @      │ V       │ ? │ R │
+    ├───┼────────┼─────────┼───┼───┤
+    │ 0 │ cond   │ <empty> │ x │ 1 │
+    │ 1 │ if-in  │ <empty> │ x │ 1 │
+    │ 2 │ a      │ <empty> │ x │ 0 │
+    │ 3 │ a'     │ <empty> │ x │ 0 │
+    │ 4 │ b      │ <empty> │ x │ 0 │
+    │ 5 │ b'     │ <empty> │ x │ 0 │
+    │ 6 │ if-out │ <empty> │ x │ 1 │
+    └───┴────────┴─────────┴───┴───┘ |}];
+  Low.stabilize low;
+  print_env low;
+  [%expect
+    {|
+    ┌───┬────────┬─────────┬───┬───┐
+    │ # │ @      │ V       │ ? │ R │
+    ├───┼────────┼─────────┼───┼───┤
+    │ 0 │ cond   │ true    │ - │ 1 │
+    │ 1 │ if-in  │ true    │ - │ 1 │
+    │ 2 │ a      │ 3       │ - │ 1 │
+    │ 3 │ a'     │ <empty> │ x │ 0 │
+    │ 4 │ b      │ <empty> │ x │ 0 │
+    │ 5 │ b'     │ <empty> │ x │ 0 │
+    │ 6 │ if-out │ 3       │ - │ 1 │
+    └───┴────────┴─────────┴───┴───┘ |}]
 ;;

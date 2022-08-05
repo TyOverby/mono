@@ -1,0 +1,4 @@
+(executables
+ (names main)
+ (libraries braid_benchmarks core core_bench.runner)
+ (preprocess (pps ppx_jane)))

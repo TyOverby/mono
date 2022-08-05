@@ -1,4 +1,5 @@
 open! Core
+include Safety
 
 module Node0 : sig
   type 'a t = private int
@@ -18,10 +19,10 @@ type t =
   ; sexp_ofs : Obj.t Option_array.t
   ; names : string Option_array.t
   ; computes : Obj.t Option_array.t
-  ; refcount : int array
-  ; dirty : bool array
-  ; depends_on : Node0.packed array array
-  ; depended_on_by : Node0.packed array array
+  ; refcount : int Array.t
+  ; dirty : bool Array.t
+  ; depends_on : Node0.packed Array.t Array.t
+  ; depended_on_by : Node0.packed Array.t Array.t
   ; length : int
   ; mutable next_id : int
   }
@@ -32,10 +33,10 @@ let create ~length =
   ; sexp_ofs = Option_array.init length (fun _ -> None)
   ; names = Option_array.init length (fun _ -> None)
   ; computes = Option_array.init length (fun _ -> None)
-  ; refcount = Array.create length 0
-  ; dirty = Array.create length true
-  ; depends_on = Array.create length [||]
-  ; depended_on_by = Array.create length [||]
+  ; refcount = Array.create ~len:length 0
+  ; dirty = Array.create ~len:length true
+  ; depends_on = Array.create ~len:length Array.empty
+  ; depended_on_by = Array.create ~len:length Array.empty
   ; length
   ; next_id = 0
   }
@@ -60,8 +61,8 @@ let prepare
   =
   let id = (id :> int) in
   Option_array.set_some env.computes id (Obj.repr compute);
-  Array.set env.depends_on id depends_on;
-  Array.set env.depended_on_by id depended_on_by;
+  Array.set env.depends_on id (Array.of_array depends_on);
+  Array.set env.depended_on_by id (Array.of_array depended_on_by);
   Option_array.set env.sexp_ofs id (Option.map sexp_of ~f:Obj.magic);
   Option_array.set env.names id name
 ;;
@@ -194,7 +195,7 @@ module Node = struct
   let read_value (type a) env (id : a t) : a =
     let id = (id :> int) in
     if Option_array.is_some env.values id
-    then Option_array.get_some_exn env.values id |> (Obj.magic : Obj.t -> a)
+    then Option_array.get_some env.values id |> (Obj.magic : Obj.t -> a)
     else failwithf "Braid.Env.Node.value: value for id (%d) not computed yet" id ()
   ;;
 
@@ -206,11 +207,10 @@ module Node = struct
         let cutoff =
           if Option_array.is_some env.cutoffs id
           then
-            Option_array.get_some_exn env.cutoffs id
-            |> (Obj.magic : Obj.t -> a -> a -> bool)
+            Option_array.get_some env.cutoffs id |> (Obj.magic : Obj.t -> a -> a -> bool)
           else phys_equal
         in
-        let old = Option_array.get_some_exn env.values id |> (Obj.magic : Obj.t -> a) in
+        let old = Option_array.get_some env.values id |> (Obj.magic : Obj.t -> a) in
         if cutoff old new_
         then false
         else (
@@ -229,7 +229,7 @@ module Node = struct
   let recompute (type a) env (id : a t) : unit =
     let id = (id :> int) in
     let compute =
-      (Obj.magic : Obj.t -> unit -> a) (Option_array.get_some_exn env.computes id)
+      (Obj.magic : Obj.t -> unit -> a) (Option_array.get_some env.computes id)
     in
     let value = compute () in
     Option_array.set_some env.values id (Obj.repr value);

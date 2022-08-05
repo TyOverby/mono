@@ -27,6 +27,15 @@ module Value_or_node = struct
     | Constant of 'a
     | Exception of exn
     | Node of 'a Mid.Node.t
+
+  let to_value env = function
+    | Constant c -> Value.Constant c, env
+    | Exception exn -> Value.Exception exn, env
+    | Node node ->
+      let name = Name.create () in
+      let env = Env.set env name node in
+      Name name, env
+  ;;
 end
 
 module Arr = struct
@@ -163,6 +172,12 @@ type 'a t =
       ; f : 'a -> 'b t
       }
       -> 'b t
+  | If :
+      { cond : bool Value.t
+      ; then_ : 'a Value.t
+      ; else_ : 'a Value.t
+      }
+      -> 'a Value.t t
 
 let return a = Return a
 let const a = Const a
@@ -172,6 +187,7 @@ let arr2 a b ~f = Arr (Arr2 { a; b; f })
 let arr3 a b c ~f = Arr (Arr3 { a; b; c; f })
 let arr4 a b c d ~f = Arr (Arr4 { a; b; c; d; f })
 let bind a ~f = Bind { a; f }
+let if_ cond ~then_ ~else_ = If { cond; then_; else_ }
 
 module Let_syntax = struct
   module Let_syntax = struct
@@ -192,16 +208,21 @@ let rec lower : type a. Mid.t -> Env.t -> a t -> Mid.t * Env.t * a =
     mid, env, Value.Name name
   | Arr arr ->
     let mid, value_or_node = Arr.eval mid env arr in
-    let value, env =
-      match value_or_node with
-      | Constant c -> Value.Constant c, env
-      | Exception exn -> Value.Exception exn, env
-      | Node node ->
-        let name = Name.create () in
-        let env = Env.set env name node in
-        Name name, env
-    in
+    let value, env = Value_or_node.to_value env value_or_node in
     mid, env, value
+  | If { cond; then_; else_ } ->
+    (match cond with
+    | Value.Exception _ as exn -> mid, env, exn
+    | Value.Constant true -> mid, env, then_
+    | Constant false -> mid, env, else_
+    | cond ->
+      let mid, cond = Arr.to_node ~env mid cond in
+      let mid, then_ = Arr.to_node ~env mid then_ in
+      let mid, else_ = Arr.to_node ~env mid else_ in
+      let mid, res = Mid.if_ mid cond ~then_ ~else_ in
+      let name = Name.create () in
+      let env = Env.set env name res in
+      mid, env, Value.Name name)
   | Bind { a; f } ->
     let mid, env, r = lower mid env a in
     lower mid env (f r)
