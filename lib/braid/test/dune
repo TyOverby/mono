@@ -1,6 +1,6 @@
 (library
  (name braid_test)
  (inline_tests)
- (libraries braid core_kernel.uopt core)
+ (libraries braid expect_test_helpers_core core_kernel.uopt core)
  (preprocess
   (pps ppx_jane)))

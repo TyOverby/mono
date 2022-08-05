@@ -20,8 +20,8 @@ let n_additions =
 let tree =
   [ "braid", Braid_bench.tree 15
   ; "incremental", Incr_bench.tree 15
-  ; "incremental (with tuples)", Incr_bench.tree_with_tuples 15
   ; "ocaml", Ocaml_bench.tree 15
+    (*; "incremental (with tuples)", Incr_bench.tree_with_tuples 15 *)
   ]
 ;;
 
@@ -45,7 +45,7 @@ let%bench_fun ("n_additions" [@params t = n_additions]) =
     t.get_output ()
 ;;
 
-let%bench_fun ("n_additions (all cutoff)" [@params t = n_additions]) =
+let%bench_fun ("(all cutoff) additions" [@params t = n_additions]) =
   let t = t () in
   fun () ->
     t.stabilize ();

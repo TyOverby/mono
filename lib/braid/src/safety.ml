@@ -10,6 +10,7 @@ module Common = struct
   module Array = struct
     type 'a t = 'a Array.t [@@deriving sexp_of]
 
+    let length = Array.length
     let empty = [||]
     let of_array = Fn.id
     let create = Array.create

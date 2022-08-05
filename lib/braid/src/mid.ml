@@ -11,18 +11,19 @@ module Priority = struct
 
   let multi_compare first ~fallback = if first = 0 then fallback else first
 
-  let compare (a, a_id) (b, b_id) =
+  let compare (a, a_iter, a_id) (b, b_iter, b_id) =
     let by_id = compare_int a_id b_id in
+    let by_iter = compare_int a_iter b_iter in
     match a, b with
     | Reward ak, Reward bk ->
       let by_kind = compare_kind ak bk in
-      multi_compare by_kind ~fallback:by_id
+      by_kind |> multi_compare ~fallback:by_iter |> multi_compare ~fallback:by_id
     | Neutral ad, Neutral bd ->
       let by_dist = compare_int ad bd in
-      multi_compare (-by_dist) ~fallback:by_id
+      -by_dist |> multi_compare ~fallback:by_iter |> multi_compare ~fallback:by_id
     | Punish ak, Punish bk ->
       let by_kind = compare_kind ak bk in
-      multi_compare (-by_kind) ~fallback:(-by_id)
+      -by_kind |> multi_compare ~fallback:by_iter |> multi_compare ~fallback:(-by_id)
     | Reward _, Neutral _ | Reward _, Punish _ -> -1
     | Punish _, Neutral _ | Punish _, Reward _ -> 1
     | Neutral _, Reward _ -> 1
@@ -116,7 +117,7 @@ let rec propagate_priorities (t : t) (T node : Node.Packed.t) ~priority =
   let continue, priorities =
     match Map.find t.priorities (T node) with
     | None -> true, Map.set t.priorities (T node) priority
-    | Some p' when Priority.compare (priority, node.id) (p', node.id) < 1 ->
+    | Some p' when Priority.compare (priority, 0, 0) (p', 0, 0) < 1 ->
       true, Map.set t.priorities (T node) priority
     | Some _ -> false, t.priorities
   in
@@ -168,57 +169,33 @@ let add ?name ?sexp_of ?(priority = Priority.Neutral Int.max_value) t ~depends_o
   t, node
 ;;
 
-(*
-let compute_distance_from_priority_nodes { nodes; depends_on; priority; _ } =
-  (* TODO: should computes_after be factored into the distance calculation?  *)
-  let rec traverse ~(map : (_, Priority.t, _) Map.t) ~node ~distance =
-    let continue map ~distance =
-      Map.find depends_on node
-      |> Option.value ~default:Node.Packed.Set.empty
-      |> Set.fold ~init:map ~f:(fun map node -> traverse ~map ~node ~distance)
-    in
-    match Map.find map node with
-    | Some (Reward _ as p) ->
-      let map = Map.set map node p in
-      continue map ~distance:0
-    | Some (Punish _ as p) ->
-      let map = Map.set map node p in
-      continue map ~distance:(distance + 1)
-    | Some (Neutral d') when d' <= distance -> map
-    | Some (Neutral _) | None ->
-      let map = Map.set map node (Neutral distance) in
-      continue map ~distance:(distance + 1)
-  in
-  let distance_map = Map.of_key_set nodes ~f:(fun (T node) -> node.priority) in
-  Set.fold priority ~init:distance_map ~f:(fun map node ->
-      traverse ~map ~node ~distance:0)
-;;
-*)
-
 let toposort t ~nodes =
   let q =
-    let cmp (Node.Packed.T n1) (Node.Packed.T n2) =
+    let cmp (Node.Packed.T n1, iter1) (Node.Packed.T n2, iter2) =
       let p1 = Map.find_exn t.priorities (T n1) in
       let p2 = Map.find_exn t.priorities (T n2) in
-      let i1 = n1.id in
-      let i2 = n2.id in
-      Priority.compare (p1, i1) (p2, i2)
+      let id1 = n1.id in
+      let id2 = n2.id in
+      Priority.compare (p1, iter1, id1) (p2, iter2, id2)
     in
     Pairing_heap.create ~cmp ()
   in
   let seen = ref Node.Packed.Set.empty in
+  let iter = ref 0 in
   let enqueue_all nodes =
     Set.iter nodes ~f:(fun node ->
         let depends_on = Map.find_exn t.depends_on node in
-        if Set.is_empty (Set.diff depends_on !seen) then Pairing_heap.add q node)
+        if Set.is_empty (Set.diff depends_on !seen) then Pairing_heap.add q (node, !iter))
   in
   enqueue_all nodes;
   let out = ref [] in
   let rec loop () =
+    incr iter;
     match Pairing_heap.pop q with
     | None -> ()
-    | Some node ->
+    | Some (node, _iter) ->
       out := node :: !out;
+      if Set.mem !seen node then raise_s [%message "loop detected!" [%here]];
       seen := Set.add !seen node;
       Map.find t.depended_on_by node
       |> Option.value ~default:Node.Packed.Set.empty

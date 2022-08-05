@@ -52,7 +52,8 @@ let%expect_test "addition" =
     │ 1 │ b │ <empty> │ x │ 0 │
     │ 2 │ c │ <empty> │ x │ 0 │
     └───┴───┴─────────┴───┴───┘ |}];
-  Low.Node.incr_refcount env c;
+  Expect_test_helpers_core.require_no_allocation [%here] (fun () ->
+      Low.Node.incr_refcount env c);
   print_env env;
   [%expect
     {|
@@ -63,7 +64,7 @@ let%expect_test "addition" =
     │ 1 │ b │ <empty> │ x │ 1 │
     │ 2 │ c │ <empty> │ x │ 1 │
     └───┴───┴─────────┴───┴───┘ |}];
-  Low.stabilize env;
+  Expect_test_helpers_core.require_no_allocation [%here] (fun () -> Low.stabilize env);
   print_env env;
   [%expect
     {|
@@ -74,7 +75,8 @@ let%expect_test "addition" =
     │ 1 │ b │ 3 │ - │ 1 │
     │ 2 │ c │ 5 │ - │ 1 │
     └───┴───┴───┴───┴───┘ |}];
-  Low.Node.write_value env a 10;
+  Expect_test_helpers_core.require_no_allocation [%here] (fun () ->
+      Low.Node.write_value env a 10);
   print_env env;
   [%expect
     {|
@@ -85,7 +87,7 @@ let%expect_test "addition" =
     │ 1 │ b │ 3  │ - │ 1 │
     │ 2 │ c │ 5  │ x │ 1 │
     └───┴───┴────┴───┴───┘ |}];
-  Low.stabilize env;
+  Expect_test_helpers_core.require_no_allocation [%here] (fun () -> Low.stabilize env);
   print_env env;
   [%expect
     {|

@@ -21,6 +21,6 @@ module type S = sig
     val create : len:int -> 'a -> 'a t
     val set : 'a t -> int -> 'a -> unit
     val get : 'a t -> int -> 'a
-    val iter : 'a t -> f:('a -> unit) -> unit
+    val length : _ t -> int
   end
 end

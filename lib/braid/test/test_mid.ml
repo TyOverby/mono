@@ -220,8 +220,8 @@ let%expect_test "pretty if" =
     │ 0 │ cond   │ <empty> │ x │ 0 │
     │ 1 │ if-in  │ <empty> │ x │ 0 │
     │ 2 │ a      │ <empty> │ x │ 0 │
-    │ 3 │ a'     │ <empty> │ x │ 0 │
-    │ 4 │ b      │ <empty> │ x │ 0 │
+    │ 3 │ b      │ <empty> │ x │ 0 │
+    │ 4 │ a'     │ <empty> │ x │ 0 │
     │ 5 │ b'     │ <empty> │ x │ 0 │
     │ 6 │ if-out │ <empty> │ x │ 0 │
     └───┴────────┴─────────┴───┴───┘ |}];
@@ -235,8 +235,8 @@ let%expect_test "pretty if" =
     │ 0 │ cond   │ <empty> │ x │ 1 │
     │ 1 │ if-in  │ <empty> │ x │ 1 │
     │ 2 │ a      │ <empty> │ x │ 0 │
-    │ 3 │ a'     │ <empty> │ x │ 0 │
-    │ 4 │ b      │ <empty> │ x │ 0 │
+    │ 3 │ b      │ <empty> │ x │ 0 │
+    │ 4 │ a'     │ <empty> │ x │ 0 │
     │ 5 │ b'     │ <empty> │ x │ 0 │
     │ 6 │ if-out │ <empty> │ x │ 1 │
     └───┴────────┴─────────┴───┴───┘ |}];
@@ -250,8 +250,8 @@ let%expect_test "pretty if" =
     │ 0 │ cond   │ true    │ - │ 1 │
     │ 1 │ if-in  │ true    │ - │ 1 │
     │ 2 │ a      │ 3       │ - │ 1 │
-    │ 3 │ a'     │ <empty> │ x │ 0 │
-    │ 4 │ b      │ <empty> │ x │ 0 │
+    │ 3 │ b      │ <empty> │ x │ 0 │
+    │ 4 │ a'     │ <empty> │ x │ 0 │
     │ 5 │ b'     │ <empty> │ x │ 0 │
     │ 6 │ if-out │ 3       │ - │ 1 │
     └───┴────────┴─────────┴───┴───┘ |}]

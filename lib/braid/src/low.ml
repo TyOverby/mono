@@ -163,7 +163,10 @@ module Node = struct
     if prev_refcount = 0
     then (
       let depends_on = Array.get env.depends_on id in
-      Array.iter depends_on ~f:(fun (T id) -> incr_refcount env id))
+      for i = 0 to Array.length depends_on - 1 do
+        let (T id) = Array.get depends_on i in
+        incr_refcount env id
+      done)
  ;;
 
   let rec decr_refcount : type a. _ -> a t -> unit =
@@ -174,7 +177,10 @@ module Node = struct
     if prev_refcount = 1
     then (
       let depends_on = Array.get env.depends_on id in
-      Array.iter depends_on ~f:(fun (T id) -> decr_refcount env id))
+      for i = 0 to Array.length depends_on - 1 do
+        let (T id) = Array.get depends_on i in
+        decr_refcount env id
+      done)
  ;;
 
   let is_dirty (type a) env (id : a t) : bool =
@@ -194,9 +200,7 @@ module Node = struct
 
   let read_value (type a) env (id : a t) : a =
     let id = (id :> int) in
-    if Option_array.is_some env.values id
-    then Option_array.get_some env.values id |> (Obj.magic : Obj.t -> a)
-    else failwithf "Braid.Env.Node.value: value for id (%d) not computed yet" id ()
+    Option_array.get_some env.values id |> (Obj.magic : Obj.t -> a)
   ;;
 
   let write_value (type a) env (id : a t) (new_ : a) : unit =
@@ -223,23 +227,37 @@ module Node = struct
     if prop
     then (
       let depends_on_me = Array.get env.depended_on_by id in
-      Array.iter depends_on_me ~f:(fun (T id) -> Array.set env.dirty (id :> int) true))
+      for i = 0 to Array.length depends_on_me - 1 do
+        let (T id) = Array.get depends_on_me i in
+        Array.set env.dirty (id :> int) true
+      done)
+    [@@inline always]
   ;;
 
   let recompute (type a) env (id : a t) : unit =
-    let id = (id :> int) in
+    let id_i = (id :> int) in
     let compute =
-      (Obj.magic : Obj.t -> unit -> a) (Option_array.get_some env.computes id)
+      (Obj.magic : Obj.t -> unit -> a) (Option_array.get_some env.computes id_i)
     in
-    let value = compute () in
-    Option_array.set_some env.values id (Obj.repr value);
-    Array.set env.dirty id false
+    write_value env id (compute ())
+    [@@inline always]
   ;;
 end
+
+(* bits for info int 
+     .--------------- refcount
+     |   .----------- has_cutoff
+     |   | .--------- ever_computed
+     |   | | .------- dirty
+     v   v v v
+  |.....| | | | 
+ *)
 
 let stabilize env =
   for i = 0 to env.length - 1 do
     if Array.get env.dirty i && Array.get env.refcount i <> 0
-    then Node.recompute env (Node.of_int i)
+    then (
+      Array.set env.dirty i false;
+      Node.recompute env (Node.of_int i))
   done
 ;;
