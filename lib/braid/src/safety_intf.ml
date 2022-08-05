@@ -1,15 +1,15 @@
 open! Core
 
 module type S = sig
-  module Option_array : sig
-    type 'a t
+  module Obj_array : sig
+    type t
 
-    val init : int -> f:(int -> 'a option) -> 'a t
-    val set_some : 'a t -> int -> 'a -> unit
-    val set : 'a t -> int -> 'a option -> unit
-    val get : 'a t -> int -> 'a option
-    val is_some : 'a t -> int -> bool
-    val get_some : 'a t -> int -> 'a
+    val init_empty : int -> t
+    val get_some : t -> int -> Obj.t
+    val set_some : t -> int -> Obj.t -> unit
+    val set_some_int_assuming_currently_int : t -> int -> Obj.t -> unit
+    val set_some_assuming_currently_int : t -> int -> Obj.t -> unit
+    val set_some_int : t -> int -> Obj.t -> unit
   end
 
   module Array : sig

@@ -13,14 +13,103 @@ end = struct
   let of_int = Fn.id
 end
 
+module Info = struct
+  type t = int
+
+  let of_int = Fn.id
+
+  (* bits for info int 
+    .---------------- refcount
+    |  .------------- has_cutoff
+    |  | .----------- value is int
+    |  | | .--------- has value
+    |  | | | .------- dirty
+    v  v v v v
+  |...| | | | | *)
+
+  let int_to_bool : int -> bool = Obj.magic
+  let bool_to_int : bool -> int = Obj.magic
+  let lnot x = x lxor -1
+
+  let to_string ?(verbose = false) t =
+    let refcount = sprintf "%d" (t lsr 3) in
+    let verboseness =
+      match verbose with
+      | false -> ""
+      | true ->
+        let padding = String.length refcount in
+        let padding = String.init padding (Fn.const ' ') in
+        sprintf
+          {|
+%s.--------------- refcount
+%s| .------------- has_cutoff
+%s| | .----------- value is int
+%s| | | .--------- has value
+%s| | | | .------- dirty
+%sv v v v v
+|}
+          padding
+          padding
+          padding
+          padding
+          padding
+          padding
+    in
+    sprintf
+      "%s %s %d %d %d %d\n 0x%x"
+      verboseness
+      refcount
+      ((t lsr 3) land 1)
+      ((t lsr 2) land 1)
+      ((t lsr 1) land 1)
+      ((t lsr 0) land 1)
+      t
+  ;;
+
+  (* getters *)
+  let is_dirty t = int_to_bool ((t lsr 0) land 1) [@@inline always]
+  let has_value t = int_to_bool ((t lsr 1) land 1) [@@inline always]
+  let value_is_int t = int_to_bool ((t lsr 2) land 1) [@@inline always]
+  let both_are_int a b = value_is_int (a land b) [@@inline always]
+  let has_cutoff t = int_to_bool ((t lsr 3) land 1) [@@inline always]
+  let refcount t = t lsr 4 [@@inline always]
+  let is_referenced t = refcount t <> 0 [@@inline always]
+  let isn't_referenced t = refcount t = 0 [@@inline always]
+  let refcount_is_one t = refcount t = 1 [@@inline always]
+
+  (* setters *)
+  let set_dirty t = t lor 1 [@@inline always]
+  let set_clean t = t land lnot (1 lsl 0) [@@inline always]
+  let set_has_value t = t lor (1 lsl 1) [@@inline always]
+  let set_value_is_int t = t lor (1 lsl 2) [@@inline always]
+  let set_value_isn't_int t = t land lnot (1 lsl 2) [@@inline always]
+
+  let set_value_int t b =
+    let mask = lnot (1 lsl 2) in
+    let i = bool_to_int b lsl 2 in
+    let r = mask land i in
+    t lor r
+    [@@inline always]
+  ;;
+
+  let set_has_cutoff t = t lor (1 lsl 3) [@@inline always]
+  let init = 0 |> set_dirty |> set_value_is_int
+  let incr_refcount t = t + (1 lsl 4) [@@inline always]
+
+  let decr_refcount t =
+    (* debug assert refcount t <> 0 *)
+    t - (1 lsl 4)
+    [@@inline always]
+  ;;
+end
+
 type t =
-  { values : Obj.t Option_array.t
-  ; cutoffs : Obj.t Option_array.t
-  ; sexp_ofs : Obj.t Option_array.t
-  ; names : string Option_array.t
-  ; computes : Obj.t Option_array.t
-  ; refcount : int Array.t
-  ; dirty : bool Array.t
+  { values : Obj_array.t
+  ; info : Info.t Array.t
+  ; cutoffs : Obj_array.t
+  ; sexp_ofs : Obj.t option Array.t
+  ; names : string option Array.t
+  ; computes : Obj_array.t
   ; depends_on : Node0.packed Array.t Array.t
   ; depended_on_by : Node0.packed Array.t Array.t
   ; length : int
@@ -28,13 +117,12 @@ type t =
   }
 
 let create ~length =
-  { values = Option_array.init length (fun _ -> None)
-  ; cutoffs = Option_array.init length (fun _ -> None)
-  ; sexp_ofs = Option_array.init length (fun _ -> None)
-  ; names = Option_array.init length (fun _ -> None)
-  ; computes = Option_array.init length (fun _ -> None)
-  ; refcount = Array.create ~len:length 0
-  ; dirty = Array.create ~len:length true
+  { values = Obj_array.init_empty length
+  ; info = Array.create ~len:length Info.init
+  ; cutoffs = Obj_array.init_empty length
+  ; sexp_ofs = Array.init length (fun _ -> None)
+  ; names = Array.init length ~f:(fun _ -> None)
+  ; computes = Obj_array.init_empty length
   ; depends_on = Array.create ~len:length Array.empty
   ; depended_on_by = Array.create ~len:length Array.empty
   ; length
@@ -60,33 +148,37 @@ let prepare
     (id : a Node0.t)
   =
   let id = (id :> int) in
-  Option_array.set_some env.computes id (Obj.repr compute);
+  Obj_array.set_some env.computes id (Obj.repr compute);
   Array.set env.depends_on id (Array.of_array depends_on);
   Array.set env.depended_on_by id (Array.of_array depended_on_by);
-  Option_array.set env.sexp_ofs id (Option.map sexp_of ~f:Obj.magic);
-  Option_array.set env.names id name
+  Array.set env.sexp_ofs id (Option.map sexp_of ~f:Obj.magic);
+  Array.set env.names id name
 ;;
 
 let sexp_of_t t =
   let sexps = Array.init t.length (fun _ -> Sexp.Atom "") in
   for i = 0 to t.length - 1 do
     let name =
-      match Option_array.get t.names i with
+      match Array.get t.names i with
       | None -> sprintf "#%d:" i
       | Some name -> sprintf "%s#%d:" name i
     in
+    let info = Array.get t.info i in
     let value =
-      match Option_array.get t.values i, Option_array.get t.sexp_ofs i with
-      | Some v, Some sexp_of -> Obj.magic sexp_of v
-      | None, _ -> Sexp.Atom "<empty>"
-      | Some _, None -> Sexp.Atom "<filled>"
+      match Info.has_value info with
+      | false -> Sexp.Atom "<empty>"
+      | true ->
+        let value = Obj_array.get_some t.values i in
+        (match Array.get t.sexp_ofs i with
+        | Some sexp_of -> Obj.magic sexp_of value
+        | None -> Sexp.Atom "<filled>")
     in
     let dirty =
-      match Array.get t.dirty i with
+      match Info.is_dirty info with
       | true -> Sexp.Atom "dirty"
       | false -> Sexp.Atom "clean"
     in
-    let refcount = Array.get t.refcount i in
+    let refcount = Info.refcount info in
     let sexp = [%message name ~_:(value : Sexp.t) ~_:(dirty : Sexp.t) (refcount : int)] in
     Array.set sexps i sexp
   done;
@@ -124,18 +216,22 @@ let debug t =
   let ts =
     List.init t.length (fun i ->
         let name =
-          match Option_array.get t.names i with
+          match Array.get t.names i with
           | None -> ""
           | Some name -> name
         in
+        let info = Array.get t.info i in
         let value =
-          match Option_array.get t.values i, Option_array.get t.sexp_ofs i with
-          | Some v, Some sexp_of -> Obj.magic sexp_of v |> Sexp.to_string_hum
-          | None, _ -> "<empty>"
-          | Some _, None -> "<filled>"
+          match Info.has_value info with
+          | false -> Sexp.Atom "<empty>"
+          | true ->
+            let value = Obj_array.get_some t.values i in
+            (match Array.get t.sexp_ofs i with
+            | Some sexp_of -> Obj.magic sexp_of value
+            | None -> Sexp.Atom "<filled>")
         in
-        let dirty = Array.get t.dirty i in
-        let refcount = Array.get t.refcount i in
+        let value = Sexp.to_string_hum value in
+        let dirty, refcount = Info.(is_dirty info, refcount info) in
         { i; name; value; dirty; refcount })
   in
   match
@@ -158,9 +254,10 @@ module Node = struct
   let rec incr_refcount : type a. _ -> a t -> unit =
    fun env (id : a t) : unit ->
     let id = (id :> int) in
-    let prev_refcount = Array.get env.refcount id in
-    Array.set env.refcount id (prev_refcount + 1);
-    if prev_refcount = 0
+    let prev_info = Array.get env.info id in
+    let new_info = Info.incr_refcount prev_info in
+    Array.set env.info id new_info;
+    if Info.isn't_referenced prev_info
     then (
       let depends_on = Array.get env.depends_on id in
       for i = 0 to Array.length depends_on - 1 do
@@ -172,9 +269,10 @@ module Node = struct
   let rec decr_refcount : type a. _ -> a t -> unit =
    fun env (id : a t) : unit ->
     let id = (id :> int) in
-    let prev_refcount = Array.get env.refcount id in
-    Array.set env.refcount id (prev_refcount - 1);
-    if prev_refcount = 1
+    let prev_info = Array.get env.info id in
+    let new_info = Info.decr_refcount prev_info in
+    Array.set env.info id new_info;
+    if Info.refcount_is_one prev_info
     then (
       let depends_on = Array.get env.depends_on id in
       for i = 0 to Array.length depends_on - 1 do
@@ -185,79 +283,118 @@ module Node = struct
 
   let is_dirty (type a) env (id : a t) : bool =
     let id = (id :> int) in
-    Array.get env.dirty id
+    let info = Array.get env.info id in
+    Info.is_dirty info
   ;;
 
   let mark_dirty (type a) env (id : a t) : unit =
     let id = (id :> int) in
-    Array.set env.dirty id true
+    let info = Array.get env.info id in
+    let new_info = Info.set_dirty info in
+    Array.set env.info id new_info
   ;;
 
   let has_value (type a) env (id : a t) : bool =
     let id = (id :> int) in
-    Option_array.is_some env.values id
+    let info = Array.get env.info id in
+    Info.has_value info
   ;;
 
   let read_value (type a) env (id : a t) : a =
     let id = (id :> int) in
-    Option_array.get_some env.values id |> (Obj.magic : Obj.t -> a)
+    Obj_array.get_some env.values id |> (Obj.magic : Obj.t -> a)
+  ;;
+
+  let propagate_dirty (type a) env (id : int) : unit =
+    let depends_on_me = Array.get env.depended_on_by id in
+    for i = 0 to Array.length depends_on_me - 1 do
+      let (T id) = Array.get depends_on_me i in
+      mark_dirty env id
+    done;
+    ()
+  ;;
+
+  let write_value_without_cutoff_or_propagating_dirtyness
+      (type a)
+      env
+      ~info
+      (id : a t)
+      (new_ : a)
+      : Info.t
+    =
+    let id = (id :> int) in
+    Obj_array.set_some_assuming_currently_int env.values id (Obj.repr new_);
+    Info.set_value_int info (Obj.is_int (Obj.repr new_))
+    [@@inline always]
+  ;;
+
+  let write_value_with_cutoff (type a) env ~info (id : a t) (new_ : a) : Info.t =
+    let id = (id :> int) in
+    let cutoff =
+      Obj_array.get_some env.cutoffs id |> (Obj.magic : Obj.t -> a -> a -> bool)
+    in
+    let old = Obj_array.get_some env.values id |> (Obj.magic : Obj.t -> a) in
+    if cutoff old new_
+    then info
+    else (
+      Obj_array.set_some env.values id (Obj.repr new_);
+      propagate_dirty env id;
+      Info.set_value_int info (Obj.is_int (Obj.repr new_)))
+    [@@inline always]
+  ;;
+
+  let write_value_with_phys_equal (type a) env ~info (id : a t) (new_ : a) : Info.t =
+    let id = (id :> int) in
+    let old = Obj_array.get_some env.values id |> (Obj.magic : Obj.t -> a) in
+    if phys_equal old new_
+    then info
+    else (
+      let new_info = Info.set_value_int info (Obj.is_int (Obj.repr new_)) in
+      if Info.both_are_int info new_info
+      then Obj_array.set_some_int_assuming_currently_int env.values id (Obj.repr new_)
+      else Obj_array.set_some env.values id (Obj.repr new_);
+      propagate_dirty env id;
+      new_info)
+    [@@inline always]
+  ;;
+
+  let write_value (type a) env ~info (id : a t) (new_ : a) : Info.t =
+    let has_value = Info.has_value info in
+    let has_cutoff = Info.has_cutoff info in
+    match has_value with
+    | false -> write_value_without_cutoff_or_propagating_dirtyness env ~info id new_
+    | true ->
+      (match has_cutoff with
+      | true -> write_value_with_cutoff env ~info id new_
+      | false -> write_value_with_phys_equal env ~info id new_)
+    [@@inline always]
+  ;;
+
+  let recompute (type a) env ~info (id : a t) : Info.t =
+    let id_i = (id :> int) in
+    let compute =
+      (Obj.magic : Obj.t -> unit -> a) (Obj_array.get_some env.computes id_i)
+    in
+    write_value env ~info id (compute ())
+    [@@inline always]
   ;;
 
   let write_value (type a) env (id : a t) (new_ : a) : unit =
-    let id = (id :> int) in
-    let prop =
-      if Option_array.is_some env.values id
-      then (
-        let cutoff =
-          if Option_array.is_some env.cutoffs id
-          then
-            Option_array.get_some env.cutoffs id |> (Obj.magic : Obj.t -> a -> a -> bool)
-          else phys_equal
-        in
-        let old = Option_array.get_some env.values id |> (Obj.magic : Obj.t -> a) in
-        if cutoff old new_
-        then false
-        else (
-          Option_array.set_some env.values id (Obj.repr new_);
-          true))
-      else (
-        Option_array.set_some env.values id (Obj.repr new_);
-        false)
-    in
-    if prop
-    then (
-      let depends_on_me = Array.get env.depended_on_by id in
-      for i = 0 to Array.length depends_on_me - 1 do
-        let (T id) = Array.get depends_on_me i in
-        Array.set env.dirty (id :> int) true
-      done)
-    [@@inline always]
-  ;;
-
-  let recompute (type a) env (id : a t) : unit =
     let id_i = (id :> int) in
-    let compute =
-      (Obj.magic : Obj.t -> unit -> a) (Option_array.get_some env.computes id_i)
-    in
-    write_value env id (compute ())
-    [@@inline always]
+    let info = Array.get env.info id_i in
+    let new_info = info |> Info.set_clean |> Info.set_has_value in
+    let new_info = write_value env ~info:new_info id new_ in
+    Array.set env.info id_i new_info
   ;;
 end
 
-(* bits for info int 
-     .--------------- refcount
-     |   .----------- has_cutoff
-     |   | .--------- ever_computed
-     |   | | .------- dirty
-     v   v v v
-  |.....| | | | 
- *)
-
 let stabilize env =
   for i = 0 to env.length - 1 do
-    if Array.get env.dirty i && Array.get env.refcount i <> 0
+    let info = Array.get env.info i in
+    if Bool.Non_short_circuiting.(Info.is_dirty info && Info.is_referenced info)
     then (
-      Array.set env.dirty i false;
-      Node.recompute env (Node.of_int i))
+      let new_info = info |> Info.set_clean |> Info.set_has_value in
+      let new_info = Node.recompute env ~info:new_info (Node.of_int i) in
+      Array.set env.info i new_info)
   done
 ;;

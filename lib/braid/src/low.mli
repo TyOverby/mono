@@ -4,6 +4,33 @@ type t [@@deriving sexp_of]
 
 val debug : t -> string
 
+module Info : sig
+  type t [@@immediate]
+
+  val of_int : int -> t
+  val to_string : ?verbose:bool -> t -> string
+  val init : t
+
+  (* getters *)
+  val is_dirty : t -> bool
+  val has_value : t -> bool
+  val has_cutoff : t -> bool
+  val value_is_int : t -> bool
+  val refcount : t -> int
+  val is_referenced : t -> bool
+
+  (* setters *)
+  val set_dirty : t -> t
+  val set_clean : t -> t
+  val set_has_value : t -> t
+  val set_has_cutoff : t -> t
+  val set_value_is_int : t -> t
+  val set_value_isn't_int : t -> t
+  val set_value_int : t -> bool -> t
+  val incr_refcount : t -> t
+  val decr_refcount : t -> t
+end
+
 module Node : sig
   type env := t
   type 'a t [@@immediate]
