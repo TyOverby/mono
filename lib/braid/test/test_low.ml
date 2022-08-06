@@ -15,7 +15,7 @@ let%test_module "info" =
         {|
         .--------------- refcount
         | .------------- has_cutoff
-        | | .----------- value is int
+        | | .----------- [ free ]
         | | | .--------- has value
         | | | | .------- dirty
         v v v v v
@@ -29,7 +29,7 @@ let%test_module "info" =
         {|
                           .--------------- refcount
                           | .------------- has_cutoff
-                          | | .----------- value is int
+                          | | .----------- [ free ]
                           | | | .--------- has value
                           | | | | .------- dirty
                           v v v v v
@@ -44,7 +44,7 @@ let%test_module "info" =
         {|
                           .--------------- refcount
                           | .------------- has_cutoff
-                          | | .----------- value is int
+                          | | .----------- [ free ]
                           | | | .--------- has value
                           | | | | .------- dirty
                           v v v v v
@@ -58,12 +58,12 @@ let%test_module "info" =
         {|
         .--------------- refcount
         | .------------- has_cutoff
-        | | .----------- value is int
+        | | .----------- [ free ]
         | | | .--------- has value
         | | | | .------- dirty
         v v v v v
-        0 0 1 0 1
-        0x5 |}]
+        0 0 0 0 1
+        0x1 |}]
     ;;
 
     let%expect_test "set clean" =
@@ -72,12 +72,12 @@ let%test_module "info" =
         {|
         .--------------- refcount
         | .------------- has_cutoff
-        | | .----------- value is int
+        | | .----------- [ free ]
         | | | .--------- has value
         | | | | .------- dirty
         v v v v v
-        0 0 1 0 0
-        0x4 |}]
+        0 0 0 0 0
+        0x0 |}]
     ;;
 
     let%expect_test "set dirty" =
@@ -86,40 +86,12 @@ let%test_module "info" =
         {|
         .--------------- refcount
         | .------------- has_cutoff
-        | | .----------- value is int
-        | | | .--------- has value
-        | | | | .------- dirty
-        v v v v v
-        0 0 1 0 1
-        0x5 |}]
-    ;;
-
-    let%expect_test "set value isn't int" =
-      print (init |> set_value_isn't_int);
-      [%expect
-        {|
-        .--------------- refcount
-        | .------------- has_cutoff
-        | | .----------- value is int
+        | | .----------- [ free ]
         | | | .--------- has value
         | | | | .------- dirty
         v v v v v
         0 0 0 0 1
         0x1 |}]
-    ;;
-
-    let%expect_test "set value is int" =
-      print (init |> set_value_isn't_int |> set_value_is_int);
-      [%expect
-        {|
-        .--------------- refcount
-        | .------------- has_cutoff
-        | | .----------- value is int
-        | | | .--------- has value
-        | | | | .------- dirty
-        v v v v v
-        0 0 1 0 1
-        0x5 |}]
     ;;
 
     let%expect_test "set has_value" =
@@ -128,12 +100,12 @@ let%test_module "info" =
         {|
         .--------------- refcount
         | .------------- has_cutoff
-        | | .----------- value is int
+        | | .----------- [ free ]
         | | | .--------- has value
         | | | | .------- dirty
         v v v v v
-        0 0 1 1 1
-        0x7 |}]
+        0 0 0 1 1
+        0x3 |}]
     ;;
 
     let%expect_test "set has_cutoff" =
@@ -142,12 +114,12 @@ let%test_module "info" =
         {|
         .--------------- refcount
         | .------------- has_cutoff
-        | | .----------- value is int
+        | | .----------- [ free ]
         | | | .--------- has value
         | | | | .------- dirty
         v v v v v
-        1 1 1 0 1
-        0xd |}]
+        1 1 0 0 1
+        0x9 |}]
     ;;
 
     let%expect_test "refcounts " =
@@ -160,12 +132,12 @@ let%test_module "info" =
         {|
         .--------------- refcount
         | .------------- has_cutoff
-        | | .----------- value is int
+        | | .----------- [ free ]
         | | | .--------- has value
         | | | | .------- dirty
         v v v v v
-        2 0 1 0 1
-        0x15 |}];
+        2 0 0 0 1
+        0x11 |}];
       printf "%b" (is_referenced t);
       [%expect "true"];
       let t = incr_refcount t in
@@ -174,12 +146,12 @@ let%test_module "info" =
         {|
         .--------------- refcount
         | .------------- has_cutoff
-        | | .----------- value is int
+        | | .----------- [ free ]
         | | | .--------- has value
         | | | | .------- dirty
         v v v v v
-        4 0 1 0 1
-        0x25 |}];
+        4 0 0 0 1
+        0x21 |}];
       printf "%b" (is_referenced t);
       [%expect {| true |}];
       let t = decr_refcount t in
@@ -188,12 +160,12 @@ let%test_module "info" =
         {|
         .--------------- refcount
         | .------------- has_cutoff
-        | | .----------- value is int
+        | | .----------- [ free ]
         | | | .--------- has value
         | | | | .------- dirty
         v v v v v
-        2 0 1 0 1
-        0x15 |}];
+        2 0 0 0 1
+        0x11 |}];
       printf "%b" (is_referenced t);
       [%expect "true"];
       let t = decr_refcount t in
@@ -202,12 +174,12 @@ let%test_module "info" =
         {|
         .--------------- refcount
         | .------------- has_cutoff
-        | | .----------- value is int
+        | | .----------- [ free ]
         | | | .--------- has value
         | | | | .------- dirty
         v v v v v
-        0 0 1 0 1
-        0x5 |}];
+        0 0 0 0 1
+        0x1 |}];
       printf "%b" (is_referenced t);
       [%expect "false"]
     ;;
@@ -277,7 +249,8 @@ let%expect_test "addition" =
     └───┴───┴─────────┴───┴───┘ |}];
   Expect_test_helpers_core.require_no_allocation [%here] (fun () -> Low.stabilize env);
   print_env env;
-  [%expect{|
+  [%expect
+    {|
     ┌───┬───┬───┬───┬───┐
     │ # │ @ │ V │ ? │ R │
     ├───┼───┼───┼───┼───┤
@@ -288,7 +261,8 @@ let%expect_test "addition" =
   Expect_test_helpers_core.require_no_allocation [%here] (fun () ->
       Low.Node.write_value env a 10);
   print_env env;
-  [%expect{|
+  [%expect
+    {|
     ┌───┬───┬────┬───┬───┐
     │ # │ @ │ V  │ ? │ R │
     ├───┼───┼────┼───┼───┤
@@ -298,7 +272,8 @@ let%expect_test "addition" =
     └───┴───┴────┴───┴───┘ |}];
   Expect_test_helpers_core.require_no_allocation [%here] (fun () -> Low.stabilize env);
   print_env env;
-  [%expect{|
+  [%expect
+    {|
     ┌───┬───┬────┬───┬───┐
     │ # │ @ │ V  │ ? │ R │
     ├───┼───┼────┼───┼───┤
@@ -308,7 +283,8 @@ let%expect_test "addition" =
     └───┴───┴────┴───┴───┘ |}];
   Low.Node.decr_refcount env c;
   print_env env;
-  [%expect{|
+  [%expect
+    {|
     ┌───┬───┬────┬───┬───┐
     │ # │ @ │ V  │ ? │ R │
     ├───┼───┼────┼───┼───┤
@@ -427,7 +403,8 @@ let%expect_test "if" =
     └───┴────────────┴─────────┴───┴───┘ |}];
   Low.stabilize env;
   print_env env;
-  [%expect{|
+  [%expect
+    {|
     ┌───┬────────────┬─────────┬───┬───┐
     │ # │ @          │ V       │ ? │ R │
     ├───┼────────────┼─────────┼───┼───┤
@@ -439,7 +416,8 @@ let%expect_test "if" =
     └───┴────────────┴─────────┴───┴───┘ |}];
   Low.Node.write_value env cond 1;
   print_env env;
-  [%expect{|
+  [%expect
+    {|
     ┌───┬────────────┬─────────┬───┬───┐
     │ # │ @          │ V       │ ? │ R │
     ├───┼────────────┼─────────┼───┼───┤
@@ -451,7 +429,8 @@ let%expect_test "if" =
     └───┴────────────┴─────────┴───┴───┘ |}];
   Low.stabilize env;
   print_env env;
-  [%expect{|
+  [%expect
+    {|
     ┌───┬────────────┬───────┬───┬───┐
     │ # │ @          │ V     │ ? │ R │
     ├───┼────────────┼───────┼───┼───┤

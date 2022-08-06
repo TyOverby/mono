@@ -15,7 +15,6 @@ module Info : sig
   val is_dirty : t -> bool
   val has_value : t -> bool
   val has_cutoff : t -> bool
-  val value_is_int : t -> bool
   val refcount : t -> int
   val is_referenced : t -> bool
 
@@ -24,9 +23,6 @@ module Info : sig
   val set_clean : t -> t
   val set_has_value : t -> t
   val set_has_cutoff : t -> t
-  val set_value_is_int : t -> t
-  val set_value_isn't_int : t -> t
-  val set_value_int : t -> bool -> t
   val incr_refcount : t -> t
   val decr_refcount : t -> t
 end
@@ -36,13 +32,13 @@ module Node : sig
   type 'a t [@@immediate]
   type packed = T : 'a t -> packed [@@unboxed]
 
-  val incr_refcount : env -> _ t -> unit
-  val decr_refcount : env -> _ t -> unit
-  val is_dirty : env -> _ t -> bool
-  val mark_dirty : env -> _ t -> unit
-  val has_value : env -> _ t -> bool
-  val read_value : env -> 'a t -> 'a
-  val write_value : env -> 'a t -> 'a -> unit
+  val incr_refcount : env -> _ t -> unit [@@inline always]
+  val decr_refcount : env -> _ t -> unit [@@inline always]
+  val is_dirty : env -> _ t -> bool [@@inline always]
+  val mark_dirty : env -> _ t -> unit [@@inline always]
+  val has_value : env -> _ t -> bool [@@inline always]
+  val read_value : env -> 'a t -> 'a [@@inline always]
+  val write_value : env -> 'a t -> 'a -> unit [@@inline always]
 end
 
 val create : length:int -> t

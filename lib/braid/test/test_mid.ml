@@ -19,7 +19,7 @@ let%expect_test "addition" =
       ~name:"a"
       ~sexp_of:[%sexp_of: int]
       ~depends_on:[]
-      ~compute:(fun _ ~me:_ () -> 2)
+      ~compute:(fun _ _ ~me:_ () -> 2)
   in
   let mid, b =
     Mid.Expert.add
@@ -27,7 +27,7 @@ let%expect_test "addition" =
       ~name:"b"
       ~sexp_of:[%sexp_of: int]
       ~depends_on:[]
-      ~compute:(fun _ ~me:_ () -> 3)
+      ~compute:(fun _ _ ~me:_ () -> 3)
   in
   let mid, c =
     Mid.Expert.add
@@ -35,10 +35,10 @@ let%expect_test "addition" =
       ~name:"c"
       ~sexp_of:[%sexp_of: int]
       ~depends_on:[ T a; T b ]
-      ~compute:(fun ops ->
-        let a = ops.value a in
-        let b = ops.value b in
-        fun ~me:_ () -> a () + b ())
+      ~compute:(fun low lookup ~me:_ ->
+        let a_id = lookup.f a in
+        let b_id = lookup.f b in
+        fun () -> Low.Node.read_value low a_id + Low.Node.read_value low b_id)
   in
   let low, lookup = Mid.Expert.lower mid in
   print_env low;
@@ -54,7 +54,8 @@ let%expect_test "addition" =
   Low.Node.incr_refcount low (lookup.f c);
   Low.stabilize low;
   print_env low;
-  [%expect{|
+  [%expect
+    {|
     ┌───┬───┬───┬───┬───┐
     │ # │ @ │ V │ ? │ R │
     ├───┼───┼───┼───┼───┤
@@ -72,7 +73,7 @@ let%expect_test "if" =
       ~name:"cond"
       ~sexp_of:[%sexp_of: int]
       ~depends_on:[]
-      ~compute:(fun _ops ~me:_ () -> 0)
+      ~compute:(fun _ _ ~me:_ () -> 0)
   in
   let mid, a =
     Mid.Expert.add
@@ -80,7 +81,7 @@ let%expect_test "if" =
       ~name:"a"
       ~sexp_of:[%sexp_of: string]
       ~depends_on:[]
-      ~compute:(fun _ops ~me:_ () -> "hello")
+      ~compute:(fun _ _ ~me:_ () -> "hello")
   in
   let mid, b =
     Mid.Expert.add
@@ -88,7 +89,7 @@ let%expect_test "if" =
       ~name:"b"
       ~sexp_of:[%sexp_of: string]
       ~depends_on:[]
-      ~compute:(fun _ops ~me:_ () -> "world")
+      ~compute:(fun _ _ ~me:_ () -> "world")
   in
   let rec mid__switch_in__switch_out =
     lazy
@@ -99,17 +100,25 @@ let%expect_test "if" =
            ~sexp_of:[%sexp_of: int]
            ~depends_on:[ T cond ]
            ~priority:(Mid.Priority.reward Switch)
-           ~compute:(fun ops ~me ->
-             let incr_a = ops.incr_refcount a in
-             let incr_b = ops.incr_refcount b in
-             let decr_a = ops.decr_refcount a in
-             let decr_b = ops.decr_refcount b in
+           ~compute:(fun low lookup ~me ->
+             let my_id = lookup.f me in
+             let a_id = lookup.f a in
+             let b_id = lookup.f b in
+             let cond_id = lookup.f cond in
              let (lazy (_, _, switch_out)) = mid__switch_in__switch_out in
-             let mark_switch_out_dirty = ops.mark_dirty switch_out in
-             let i_have_value = ops.has_value me in
-             let my_previous_value = ops.value me in
-             let cond_value = ops.value cond in
+             let switch_out_id = lookup.f switch_out in
              fun () ->
+               let incr_a () = Low.Node.incr_refcount low a_id in
+               let incr_b () = Low.Node.incr_refcount low b_id in
+               let decr_a () = Low.Node.decr_refcount low a_id in
+               let decr_b () = Low.Node.decr_refcount low b_id in
+               let mark_switch_out_dirty () = Low.Node.mark_dirty low switch_out_id in
+               let i_have_value () = Low.Node.has_value low my_id in
+               let my_previous_value () = Low.Node.read_value low my_id in
+               let cond_value () = Low.Node.read_value low cond_id in
+
+               (**)
+
                let prev = if i_have_value () then my_previous_value () else -1 in
                let next = cond_value () in
                if prev = next
@@ -135,14 +144,14 @@ let%expect_test "if" =
            ~sexp_of:[%sexp_of: string]
            ~depends_on:[ T switch_in ]
            ~priority:(Mid.Priority.punish Switch)
-           ~compute:(fun ops ~me:_ ->
-             let a_value = ops.value a in
-             let b_value = ops.value b in
-             let in_value = ops.value switch_in in
+           ~compute:(fun low lookup ~me:_ ->
+             let a_id = lookup.f a in
+             let b_id = lookup.f b in
+             let in_id = lookup.f switch_in in
              fun () ->
-               match in_value () with
-               | 0 -> a_value ()
-               | 1 -> b_value ()
+               match Low.Node.read_value low in_id with
+               | 0 -> Low.Node.read_value low a_id
+               | 1 -> Low.Node.read_value low b_id
                | _ -> assert false)
        in
        mid, switch_in, switch_out)
@@ -164,7 +173,8 @@ let%expect_test "if" =
   Low.Node.incr_refcount low (lookup.f switch_out);
   Low.stabilize low;
   print_env low;
-  [%expect{|
+  [%expect
+    {|
     ┌───┬────────────┬─────────┬───┬───┐
     │ # │ @          │ V       │ ? │ R │
     ├───┼────────────┼─────────┼───┼───┤
@@ -177,7 +187,8 @@ let%expect_test "if" =
   Low.Node.write_value low (lookup.f cond) 1;
   Low.stabilize low;
   print_env low;
-  [%expect{|
+  [%expect
+    {|
     ┌───┬────────────┬───────┬───┬───┐
     │ # │ @          │ V     │ ? │ R │
     ├───┼────────────┼───────┼───┼───┤
@@ -195,7 +206,7 @@ let%expect_test "pretty addition" =
   let mid, b = Mid.const mid ~name:"b" ~sexp_of:[%sexp_of: int] 3 in
   let mid, c = Mid.map2 mid ~name:"c" ~sexp_of:[%sexp_of: int] a b ~f:( + ) in
   compile_and_compute mid c;
-  [%expect{| 5 |}]
+  [%expect {| 5 |}]
 ;;
 
 let%expect_test "pretty if" =
@@ -239,7 +250,8 @@ let%expect_test "pretty if" =
     └───┴────────┴─────────┴───┴───┘ |}];
   Low.stabilize low;
   print_env low;
-  [%expect{|
+  [%expect
+    {|
     ┌───┬────────┬─────────┬───┬───┐
     │ # │ @      │ V       │ ? │ R │
     ├───┼────────┼─────────┼───┼───┤

@@ -12,7 +12,7 @@ let single_addition =
 
 let n_additions =
   [ "braid (1000)", Braid_bench.n_additions 1000
-  ; "incremental (1000)", Incr_bench.n_additions 1000
+  ; "incremental (100)", Incr_bench.n_additions 1000
   ; "ocaml (1000)", Ocaml_bench.n_additions 1000
   ]
 ;;

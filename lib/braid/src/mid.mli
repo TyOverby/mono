@@ -76,14 +76,6 @@ val if_
 module Expert : sig
   type lookup = { f : 'a. 'a Node.t -> 'a Low.Node.t }
 
-  type ops =
-    { value : 'a. 'a Node.t -> unit -> 'a
-    ; has_value : 'a. 'a Node.t -> unit -> bool
-    ; incr_refcount : 'a. 'a Node.t -> unit -> unit
-    ; decr_refcount : 'a. 'a Node.t -> unit -> unit
-    ; mark_dirty : 'a. 'a Node.t -> unit -> unit
-    }
-
   val lower : t -> Low.t * lookup
 
   val add
@@ -92,6 +84,6 @@ module Expert : sig
     -> ?priority:Priority.t
     -> t
     -> depends_on:Node.Packed.t list
-    -> compute:(ops -> me:'a Node.t -> unit -> 'a)
+    -> compute:(Low.t -> lookup -> me:'a Node.t -> unit -> 'a)
     -> t * 'a Node.t
 end

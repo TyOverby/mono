@@ -18,6 +18,22 @@ module Info = struct
 
   let of_int = Fn.id
 
+  (* proposed (i32): 
+     deps_array: 15 bits 
+     refcount:   15 bits 
+     has_value:   1 bit
+     dirty:       1 bit
+   *)
+
+  (* proposed (b54): 
+     deps_array: 20 bits 
+     refcount:   20 bits 
+
+     cutoff:      1 bit
+     has_value:   1 bit
+     dirty:       1 bit
+   *)
+
   (* bits for info int 
     .---------------- refcount
     |  .------------- has_cutoff
@@ -43,7 +59,7 @@ module Info = struct
           {|
 %s.--------------- refcount
 %s| .------------- has_cutoff
-%s| | .----------- value is int
+%s| | .----------- [ free ]
 %s| | | .--------- has value
 %s| | | | .------- dirty
 %sv v v v v
@@ -69,31 +85,19 @@ module Info = struct
   (* getters *)
   let is_dirty t = int_to_bool ((t lsr 0) land 1) [@@inline always]
   let has_value t = int_to_bool ((t lsr 1) land 1) [@@inline always]
-  let value_is_int t = int_to_bool ((t lsr 2) land 1) [@@inline always]
-  let both_are_int a b = value_is_int (a land b) [@@inline always]
   let has_cutoff t = int_to_bool ((t lsr 3) land 1) [@@inline always]
   let refcount t = t lsr 4 [@@inline always]
   let is_referenced t = refcount t <> 0 [@@inline always]
   let isn't_referenced t = refcount t = 0 [@@inline always]
   let refcount_is_one t = refcount t = 1 [@@inline always]
+  let has_value_and_cutoff t = t land 0b1010 = 0b1010
 
   (* setters *)
   let set_dirty t = t lor 1 [@@inline always]
   let set_clean t = t land lnot (1 lsl 0) [@@inline always]
   let set_has_value t = t lor (1 lsl 1) [@@inline always]
-  let set_value_is_int t = t lor (1 lsl 2) [@@inline always]
-  let set_value_isn't_int t = t land lnot (1 lsl 2) [@@inline always]
-
-  let set_value_int t b =
-    let mask = lnot (1 lsl 2) in
-    let i = bool_to_int b lsl 2 in
-    let r = mask land i in
-    t lor r
-    [@@inline always]
-  ;;
-
   let set_has_cutoff t = t lor (1 lsl 3) [@@inline always]
-  let init = 0 |> set_dirty |> set_value_is_int
+  let init = set_dirty 0
   let incr_refcount t = t + (1 lsl 4) [@@inline always]
 
   let decr_refcount t =
@@ -102,6 +106,12 @@ module Info = struct
     [@@inline always]
   ;;
 end
+
+type int16_bigarray =
+  ( int
+  , Stdlib.Bigarray.int16_unsigned_elt
+  , Stdlib.Bigarray.c_layout )
+  Stdlib.Bigarray.Array0.t
 
 type t =
   { values : Obj_array.t
@@ -317,65 +327,52 @@ module Node = struct
   let write_value_without_cutoff_or_propagating_dirtyness
       (type a)
       env
-      ~info
+      values
       (id : a t)
       (new_ : a)
-      : Info.t
+      : unit
     =
     let id = (id :> int) in
-    Obj_array.set_some_assuming_currently_int env.values id (Obj.repr new_);
-    Info.set_value_int info (Obj.is_int (Obj.repr new_))
-    [@@inline always]
+    Obj_array.set_some_assuming_currently_int values id (Obj.repr new_)
   ;;
 
-  let write_value_with_cutoff (type a) env ~info (id : a t) (new_ : a) : Info.t =
+  let write_value_with_cutoff (type a) env values (id : a t) (new_ : a) : unit =
     let id = (id :> int) in
     let cutoff =
       Obj_array.get_some env.cutoffs id |> (Obj.magic : Obj.t -> a -> a -> bool)
     in
-    let old = Obj_array.get_some env.values id |> (Obj.magic : Obj.t -> a) in
+    let old = Obj_array.get_some values id |> (Obj.magic : Obj.t -> a) in
     if cutoff old new_
-    then info
+    then ()
     else (
-      Obj_array.set_some env.values id (Obj.repr new_);
-      propagate_dirty env id;
-      Info.set_value_int info (Obj.is_int (Obj.repr new_)))
-    [@@inline always]
+      Obj_array.set_some values id (Obj.repr new_);
+      propagate_dirty env id)
   ;;
 
-  let write_value_with_phys_equal (type a) env ~info (id : a t) (new_ : a) : Info.t =
+  let write_value_with_phys_equal (type a) env values (id : a t) (new_ : a) =
     let id = (id :> int) in
-    let old = Obj_array.get_some env.values id |> (Obj.magic : Obj.t -> a) in
+    let old = Obj_array.get_some values id |> (Obj.magic : Obj.t -> a) in
     if phys_equal old new_
-    then info
+    then ()
     else (
-      let new_info = Info.set_value_int info (Obj.is_int (Obj.repr new_)) in
-      if Info.both_are_int info new_info
-      then Obj_array.set_some_int_assuming_currently_int env.values id (Obj.repr new_)
-      else Obj_array.set_some env.values id (Obj.repr new_);
-      propagate_dirty env id;
-      new_info)
+      Obj_array.set_some values id (Obj.repr new_);
+      propagate_dirty env id)
     [@@inline always]
   ;;
 
-  let write_value (type a) env ~info (id : a t) (new_ : a) : Info.t =
-    let has_value = Info.has_value info in
-    let has_cutoff = Info.has_cutoff info in
-    match has_value with
-    | false -> write_value_without_cutoff_or_propagating_dirtyness env ~info id new_
-    | true ->
-      (match has_cutoff with
-      | true -> write_value_with_cutoff env ~info id new_
-      | false -> write_value_with_phys_equal env ~info id new_)
+  let write_value (type a) env values ~info (id : a t) (new_ : a) : unit =
+    if Info.has_value_and_cutoff info
+    then write_value_with_cutoff env values id new_
+    else write_value_with_phys_equal env values id new_
     [@@inline always]
   ;;
 
-  let recompute (type a) env ~info (id : a t) : Info.t =
+  let recompute (type a) env values ~info (id : a t) =
     let id_i = (id :> int) in
     let compute =
       (Obj.magic : Obj.t -> unit -> a) (Obj_array.get_some env.computes id_i)
     in
-    write_value env ~info id (compute ())
+    write_value env values ~info id (compute ())
     [@@inline always]
   ;;
 
@@ -383,18 +380,19 @@ module Node = struct
     let id_i = (id :> int) in
     let info = Array.get env.info id_i in
     let new_info = info |> Info.set_clean |> Info.set_has_value in
-    let new_info = write_value env ~info:new_info id new_ in
+    write_value env env.values ~info:new_info id new_;
     Array.set env.info id_i new_info
   ;;
 end
 
 let stabilize env =
+  let values = env.values in
   for i = 0 to env.length - 1 do
     let info = Array.get env.info i in
     if Bool.Non_short_circuiting.(Info.is_dirty info && Info.is_referenced info)
     then (
       let new_info = info |> Info.set_clean |> Info.set_has_value in
-      let new_info = Node.recompute env ~info:new_info (Node.of_int i) in
+      Node.recompute env values ~info:new_info (Node.of_int i);
       Array.set env.info i new_info)
   done
 ;;

@@ -47,18 +47,11 @@ module Node = struct
     { name : string option
     ; sexp_of : ('a -> Sexp.t) option
     ; type_id : 'a Type_equal.Id.t
-    ; compute : ops -> me:'a t -> unit -> 'a
+    ; compute : Low.t -> lookup -> me:'a t -> unit -> 'a
     ; id : Id.t
     }
 
-  and ops =
-    { value : 'a. 'a t -> unit -> 'a
-    ; has_value : 'a. 'a t -> unit -> bool
-    ; incr_refcount : 'a. 'a t -> unit -> unit
-    ; decr_refcount : 'a. 'a t -> unit -> unit
-    ; mark_dirty : 'a. 'a t -> unit -> unit
-    }
-  [@@deriving sexp_of]
+  and lookup = { f : 'a. 'a t -> 'a Low.Node.t } [@@deriving sexp_of]
 
   let sexp_of = function
     | { sexp_of = None; _ } -> fun _ -> Sexp.Atom "<empty>"
@@ -214,15 +207,7 @@ module Expert = struct
         }
         -> with_id
 
-  type lookup = { f : 'a. 'a Node.t -> 'a Low.Node.t }
-
-  type ops = Node.ops =
-    { value : 'a. 'a Node.t -> unit -> 'a
-    ; has_value : 'a. 'a Node.t -> unit -> bool
-    ; incr_refcount : 'a. 'a Node.t -> unit -> unit
-    ; decr_refcount : 'a. 'a Node.t -> unit -> unit
-    ; mark_dirty : 'a. 'a Node.t -> unit -> unit
-    }
+  type lookup = Node.lookup = { f : 'a. 'a Node.t -> 'a Low.Node.t }
 
   let add = add
 
@@ -242,29 +227,7 @@ module Expert = struct
       let T = Type_equal.Id.same_witness_exn type_id node.type_id in
       low_id
     in
-    let ops : ops =
-      let value node =
-        let low_id = get node in
-        fun () -> Low.Node.read_value low low_id
-      in
-      let has_value node =
-        let low_id = get node in
-        fun () -> Low.Node.has_value low low_id
-      in
-      let incr_refcount node =
-        let low_id = get node in
-        fun () -> Low.Node.incr_refcount low low_id
-      in
-      let decr_refcount node =
-        let low_id = get node in
-        fun () -> Low.Node.decr_refcount low low_id
-      in
-      let mark_dirty node =
-        let low_id = get node in
-        fun () -> Low.Node.mark_dirty low low_id
-      in
-      { value; has_value; incr_refcount; decr_refcount; mark_dirty }
-    in
+    let lookup = { f = get } in
     List.iter in_order ~f:(fun (Node.Packed.T node) ->
         let deps_to_array deps_map =
           Map.find deps_map (Node.Packed.T node)
@@ -279,39 +242,48 @@ module Expert = struct
           low
           ?name:node.name
           ?sexp_of:node.sexp_of
-          ~compute:(node.compute ops ~me:node)
+          ~compute:(node.compute low lookup ~me:node)
           ~depends_on
           ~depended_on_by
           (get node));
-    low, { f = get }
+    low, lookup
   ;;
 end
 
 open Expert
 
 let const ?name ?sexp_of t a =
-  add t ?name ?sexp_of ~depends_on:[] ~compute:(fun _ ~me:_ () -> a)
+  add t ?name ?sexp_of ~depends_on:[] ~compute:(fun _ _ ~me:_ () -> a)
 ;;
 
 let map ?name ?sexp_of t a ~f =
-  add t ?name ?sexp_of ~depends_on:[ T a ] ~compute:(fun { value; _ } ~me:_ ->
-      let a_value = value a in
-      fun () -> f (a_value ()))
+  add t ?name ?sexp_of ~depends_on:[ T a ] ~compute:(fun low lookup ~me:_ ->
+      let a_id = lookup.f a in
+      fun () ->
+        let a_value = Low.Node.read_value low a_id in
+        f a_value)
 ;;
 
 let map2 ?name ?sexp_of t a b ~f =
-  add t ?name ?sexp_of ~depends_on:[ T a; T b ] ~compute:(fun { value; _ } ~me:_ ->
-      let a_value = value a in
-      let b_value = value b in
-      fun () -> f (a_value ()) (b_value ()))
+  add t ?name ?sexp_of ~depends_on:[ T a; T b ] ~compute:(fun low lookup ~me:_ ->
+      let a_id = lookup.f a in
+      let b_id = lookup.f b in
+      fun () ->
+        let a_value = Low.Node.read_value low a_id in
+        let b_value = Low.Node.read_value low b_id in
+        f a_value b_value)
 ;;
 
 let map3 ?name ?sexp_of t a b c ~f =
-  add t ?name ?sexp_of ~depends_on:[ T a; T b; T c ] ~compute:(fun { value; _ } ~me:_ ->
-      let a_value = value a in
-      let b_value = value b in
-      let c_value = value c in
-      fun () -> f (a_value ()) (b_value ()) (c_value ()))
+  add t ?name ?sexp_of ~depends_on:[ T a; T b; T c ] ~compute:(fun low lookup ~me:_ ->
+      let a_id = lookup.f a in
+      let b_id = lookup.f b in
+      let c_id = lookup.f c in
+      fun () ->
+        let a_value = Low.Node.read_value low a_id in
+        let b_value = Low.Node.read_value low b_id in
+        let c_value = Low.Node.read_value low c_id in
+        f a_value b_value c_value)
 ;;
 
 let map4 ?name ?sexp_of t a b c d ~f =
@@ -320,12 +292,17 @@ let map4 ?name ?sexp_of t a b c d ~f =
     ?name
     ?sexp_of
     ~depends_on:[ T a; T b; T c; T d ]
-    ~compute:(fun { value; _ } ~me:_ ->
-      let a_value = value a in
-      let b_value = value b in
-      let c_value = value c in
-      let d_value = value d in
-      fun () -> f (a_value ()) (b_value ()) (c_value ()) (d_value ()))
+    ~compute:(fun low lookup ~me:_ ->
+      let a_id = lookup.f a in
+      let b_id = lookup.f b in
+      let c_id = lookup.f c in
+      let d_id = lookup.f d in
+      fun () ->
+        let a_value = Low.Node.read_value low a_id in
+        let b_value = Low.Node.read_value low b_id in
+        let c_value = Low.Node.read_value low c_id in
+        let d_value = Low.Node.read_value low d_id in
+        f a_value b_value c_value d_value)
 ;;
 
 let if_ ?sexp_of t cond ~then_:a ~else_:b =
@@ -341,41 +318,40 @@ let if_ ?sexp_of t cond ~then_:a ~else_:b =
            ~depends_on:[ T cond ]
            ~sexp_of:[%sexp_of: bool]
            ~priority:(Priority.reward Switch)
-           ~compute:(fun ops ~me ->
-             let incr_a = ops.incr_refcount a in
-             let incr_b = ops.incr_refcount b in
-             let decr_a = ops.decr_refcount a in
-             let decr_b = ops.decr_refcount b in
+           ~compute:(fun low lookup ~me ->
+             let a_id = lookup.f a in
+             let b_id = lookup.f b in
+             let my_id = lookup.f me in
+             let cond_id = lookup.f cond in
              let (lazy (_, _, switch_out)) = t__in__out in
-             let mark_switch_out_dirty = ops.mark_dirty switch_out in
-             let i_have_value = ops.has_value me in
-             let my_previous_value = ops.value me in
-             let cond_value = ops.value cond in
+             let out_id = lookup.f switch_out in
              fun () ->
                let prev_valid, prev =
-                 if i_have_value () then true, my_previous_value () else false, true
+                 if Low.Node.has_value low my_id
+                 then true, Low.Node.read_value low my_id
+                 else false, true
                in
-               let next = cond_value () in
+               let next = Low.Node.read_value low cond_id in
                let should_dirty =
                  match prev_valid, prev, next with
                  | false, _, true ->
-                   incr_a ();
+                   Low.Node.incr_refcount low a_id;
                    false
                  | false, _, false ->
-                   incr_b ();
+                   Low.Node.incr_refcount low b_id;
                    false
                  | true, true, true -> false
                  | true, false, false -> false
                  | true, true, false ->
-                   decr_a ();
-                   incr_b ();
+                   Low.Node.decr_refcount low a_id;
+                   Low.Node.incr_refcount low b_id;
                    true
                  | true, false, true ->
-                   decr_b ();
-                   incr_a ();
+                   Low.Node.decr_refcount low b_id;
+                   Low.Node.incr_refcount low a_id;
                    true
                in
-               if should_dirty then mark_switch_out_dirty ();
+               if should_dirty then Low.Node.mark_dirty low out_id;
                next)
        in
        let mid, if_out =
@@ -385,17 +361,17 @@ let if_ ?sexp_of t cond ~then_:a ~else_:b =
            ~depends_on:[ T if_in ]
            ?sexp_of:sexp_of_out
            ~priority:(Priority.punish Switch)
-           ~compute:(fun ops ~me:_ ->
-             let a_value = ops.value a in
-             let b_value = ops.value b in
-             let in_value = ops.value if_in in
+           ~compute:(fun low lookup ~me:_ ->
+             let a_id = lookup.f a in
+             let b_id = lookup.f b in
+             let in_id = lookup.f if_in in
              fun () ->
-               match in_value () with
-               | true -> a_value ()
-               | false -> b_value ())
+               match Low.Node.read_value low in_id with
+               | true -> Low.Node.read_value low a_id
+               | false -> Low.Node.read_value low b_id)
        in
        mid, if_in, if_out)
   in
-  let (lazy (t, if_in, if_out)) = t__in__out in
+  let (lazy (t, _if_in, if_out)) = t__in__out in
   t, if_out
 ;;
