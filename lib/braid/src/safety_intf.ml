@@ -22,5 +22,6 @@ module type S = sig
     val set : 'a t -> int -> 'a -> unit
     val get : 'a t -> int -> 'a
     val length : _ t -> int
+    val blit : ('a t, 'a t) Base.Blit.blit
   end
 end

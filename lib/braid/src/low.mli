@@ -54,4 +54,5 @@ val prepare
   -> 'a Node.t
   -> unit
 
+val finalize : t -> unit
 val stabilize : t -> unit

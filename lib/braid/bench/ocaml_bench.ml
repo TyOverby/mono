@@ -10,12 +10,12 @@ let bench_fun start ~f =
   { set_input; get_output; stabilize }
 ;;
 
-let single_addition () = bench_fun 0 (fun i -> i + 1)
+let single_addition () = bench_fun 0 ~f:(fun i -> i + 1)
 
 let n_additions n () =
-  bench_fun 0 (fun i ->
+  bench_fun 0 ~f:(fun i ->
       let acc = ref i in
-      for i = 0 to n - 1 do
+      for _ = 0 to n - 1 do
         acc := !acc + 1
       done;
       !acc)
@@ -30,5 +30,5 @@ let tree n () =
       let right = f (i - 1) (prev * 2) in
       left + right)
   in
-  bench_fun 0 (f n)
+  bench_fun 0 ~f:(f n)
 ;;

@@ -1,5 +1,5 @@
 open! Core
-
+(**)
 module Priority = struct
   type kind = Switch [@@deriving compare, sexp_of]
 
@@ -38,9 +38,6 @@ end
 module Node = struct
   module Id = struct
     type t = int [@@deriving sexp_of]
-
-    let init = 0
-    let next a = a + 1
   end
 
   type 'a t =
@@ -109,9 +106,9 @@ let empty =
 let rec propagate_priorities (t : t) (T node : Node.Packed.t) ~priority =
   let continue, priorities =
     match Map.find t.priorities (T node) with
-    | None -> true, Map.set t.priorities (T node) priority
+    | None -> true, Map.set t.priorities ~key:(T node) ~data:priority
     | Some p' when Priority.compare (priority, 0, 0) (p', 0, 0) < 1 ->
-      true, Map.set t.priorities (T node) priority
+      true, Map.set t.priorities ~key:(T node) ~data:priority
     | Some _ -> false, t.priorities
   in
   let t = { t with priorities } in
@@ -142,7 +139,7 @@ let add ?name ?sexp_of ?(priority = Priority.Neutral Int.max_value) t ~depends_o
             | Some set -> Set.add set (T node)))
   in
   let depends_on =
-    Map.add_exn t.depends_on (T node) (Node.Packed.Set.of_list depends_on)
+    Map.add_exn t.depends_on ~key:(T node) ~data:(Node.Packed.Set.of_list depends_on)
   in
   let p =
     match priority with
@@ -246,6 +243,7 @@ module Expert = struct
           ~depends_on
           ~depended_on_by
           (get node));
+    Low.finalize low;
     low, lookup
   ;;
 end

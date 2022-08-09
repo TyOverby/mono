@@ -188,16 +188,6 @@ let%test_module "info" =
 
 let%expect_test "addition" =
   let env = Low.create ~length:3 in
-  print_env env;
-  [%expect
-    {|
-    ┌───┬───┬─────────┬───┬───┐
-    │ # │ @ │ V       │ ? │ R │
-    ├───┼───┼─────────┼───┼───┤
-    │ 0 │   │ <empty> │ x │ 0 │
-    │ 1 │   │ <empty> │ x │ 0 │
-    │ 2 │   │ <empty> │ x │ 0 │
-    └───┴───┴─────────┴───┴───┘ |}];
   let a = Low.next_id env in
   let b = Low.next_id env in
   let c = Low.next_id env in
@@ -225,6 +215,7 @@ let%expect_test "addition" =
     ~depends_on:[| T a; T b |]
     ~depended_on_by:[||]
     c;
+  Low.finalize env;
   print_env env;
   [%expect
     {|
@@ -296,18 +287,6 @@ let%expect_test "addition" =
 
 let%expect_test "if" =
   let env = Low.create ~length:5 in
-  print_env env;
-  [%expect
-    {|
-    ┌───┬───┬─────────┬───┬───┐
-    │ # │ @ │ V       │ ? │ R │
-    ├───┼───┼─────────┼───┼───┤
-    │ 0 │   │ <empty> │ x │ 0 │
-    │ 1 │   │ <empty> │ x │ 0 │
-    │ 2 │   │ <empty> │ x │ 0 │
-    │ 3 │   │ <empty> │ x │ 0 │
-    │ 4 │   │ <empty> │ x │ 0 │
-    └───┴───┴─────────┴───┴───┘ |}];
   let cond = Low.next_id env in
   let switch_in = Low.next_id env in
   let a = Low.next_id env in
@@ -376,6 +355,7 @@ let%expect_test "if" =
     ~depended_on_by:[||]
     ~name:"switch_out"
     switch_out;
+  Low.finalize env;
   print_env env;
   [%expect
     {|

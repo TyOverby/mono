@@ -10,6 +10,7 @@ module Common = struct
     let create = Array.create
     let init = Array.init
     let iter = Array.iter
+    let blit = Array.blit
   end
 end
 

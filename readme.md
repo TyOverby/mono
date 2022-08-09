@@ -21,3 +21,11 @@ environment variables set for your process.  In bash, run
 $ eval ./scripts/env.sh
 $ nvim # or whatever editor you choose
 ```
+
+┌──────────────────────────────────────────────────┬────────────┬────────────┐
+│ Name                                             │   Time/Run │ Percentage │
+├──────────────────────────────────────────────────┼────────────┼────────────┤
+│ [lib/braid/bench/benchmarks.ml] tree:braid       │ 1_283.65us │     15.89% │
+│ [lib/braid/bench/benchmarks.ml] tree:incremental │ 8_078.81us │    100.00% │
+│ [lib/braid/bench/benchmarks.ml] tree:ocaml       │    71.41us │      0.88% │
+└──────────────────────────────────────────────────┴────────────┴────────────┘

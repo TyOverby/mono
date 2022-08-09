@@ -42,8 +42,7 @@ let%expect_test "addition" =
   in
   let low, lookup = Mid.Expert.lower mid in
   print_env low;
-  [%expect
-    {|
+  [%expect{|
     ┌───┬───┬─────────┬───┬───┐
     │ # │ @ │ V       │ ? │ R │
     ├───┼───┼─────────┼───┼───┤
@@ -54,8 +53,7 @@ let%expect_test "addition" =
   Low.Node.incr_refcount low (lookup.f c);
   Low.stabilize low;
   print_env low;
-  [%expect
-    {|
+  [%expect{|
     ┌───┬───┬───┬───┬───┐
     │ # │ @ │ V │ ? │ R │
     ├───┼───┼───┼───┼───┤
@@ -156,11 +154,10 @@ let%expect_test "if" =
        in
        mid, switch_in, switch_out)
   in
-  let (lazy (mid, switch_in, switch_out)) = mid__switch_in__switch_out in
+  let (lazy (mid, _switch_in, switch_out)) = mid__switch_in__switch_out in
   let low, lookup = Mid.Expert.lower mid in
   print_env low;
-  [%expect
-    {|
+  [%expect{|
     ┌───┬────────────┬─────────┬───┬───┐
     │ # │ @          │ V       │ ? │ R │
     ├───┼────────────┼─────────┼───┼───┤
@@ -173,8 +170,7 @@ let%expect_test "if" =
   Low.Node.incr_refcount low (lookup.f switch_out);
   Low.stabilize low;
   print_env low;
-  [%expect
-    {|
+  [%expect{|
     ┌───┬────────────┬─────────┬───┬───┐
     │ # │ @          │ V       │ ? │ R │
     ├───┼────────────┼─────────┼───┼───┤
@@ -187,8 +183,7 @@ let%expect_test "if" =
   Low.Node.write_value low (lookup.f cond) 1;
   Low.stabilize low;
   print_env low;
-  [%expect
-    {|
+  [%expect{|
     ┌───┬────────────┬───────┬───┬───┐
     │ # │ @          │ V     │ ? │ R │
     ├───┼────────────┼───────┼───┼───┤
@@ -206,7 +201,7 @@ let%expect_test "pretty addition" =
   let mid, b = Mid.const mid ~name:"b" ~sexp_of:[%sexp_of: int] 3 in
   let mid, c = Mid.map2 mid ~name:"c" ~sexp_of:[%sexp_of: int] a b ~f:( + ) in
   compile_and_compute mid c;
-  [%expect {| 5 |}]
+  [%expect{| 5 |}]
 ;;
 
 let%expect_test "pretty if" =
@@ -220,8 +215,7 @@ let%expect_test "pretty if" =
   (* *)
   let low, lookup = Mid.Expert.lower mid in
   print_env low;
-  [%expect
-    {|
+  [%expect{|
     ┌───┬────────┬─────────┬───┬───┐
     │ # │ @      │ V       │ ? │ R │
     ├───┼────────┼─────────┼───┼───┤
@@ -235,8 +229,7 @@ let%expect_test "pretty if" =
     └───┴────────┴─────────┴───┴───┘ |}];
   Low.Node.incr_refcount low (lookup.f out);
   print_env low;
-  [%expect
-    {|
+  [%expect{|
     ┌───┬────────┬─────────┬───┬───┐
     │ # │ @      │ V       │ ? │ R │
     ├───┼────────┼─────────┼───┼───┤
@@ -250,8 +243,7 @@ let%expect_test "pretty if" =
     └───┴────────┴─────────┴───┴───┘ |}];
   Low.stabilize low;
   print_env low;
-  [%expect
-    {|
+  [%expect{|
     ┌───┬────────┬─────────┬───┬───┐
     │ # │ @      │ V       │ ? │ R │
     ├───┼────────┼─────────┼───┼───┤

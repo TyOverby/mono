@@ -3,7 +3,7 @@ open! Core
 module Name = struct
   type 'a t = 'a Type_equal.Id.t
 
-  let create () = Type_equal.Id.create "" sexp_of_opaque
+  let create () = Type_equal.Id.create ~name:"" sexp_of_opaque
 end
 
 module Env =
@@ -33,7 +33,7 @@ module Value_or_node = struct
     | Exception exn -> Value.Exception exn, env
     | Node node ->
       let name = Name.create () in
-      let env = Env.set env name node in
+      let env = Env.set env ~key:name ~data:node in
       Name name, env
   ;;
 end
@@ -207,7 +207,7 @@ let rec lower : type a. Mid.t -> Env.t -> a t -> Mid.t * Env.t * a =
   | Actually_const a ->
     let mid, node = Arr.to_node mid ~env (Constant a) in
     let name = Name.create () in
-    let env = Env.set env name node in
+    let env = Env.set env ~key:name ~data:node in
     mid, env, Name name
   | Arr arr ->
     let mid, value_or_node = Arr.eval mid env arr in
@@ -224,7 +224,7 @@ let rec lower : type a. Mid.t -> Env.t -> a t -> Mid.t * Env.t * a =
       let mid, else_ = Arr.to_node ~env mid else_ in
       let mid, res = Mid.if_ mid cond ~then_ ~else_ in
       let name = Name.create () in
-      let env = Env.set env name res in
+      let env = Env.set env ~key:name ~data:res in
       mid, env, Name name)
   | Bind { a; f } ->
     let mid, env, r = lower mid env a in

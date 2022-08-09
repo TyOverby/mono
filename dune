@@ -1,3 +1,3 @@
 (env
  (release
-  (ocamlopt_flags (:standard -O3))))
+  (ocamlopt_flags (:standard -w A-33-44-40-42-66-4 -O3))))

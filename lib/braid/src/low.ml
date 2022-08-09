@@ -6,11 +6,13 @@ module Node0 : sig
   type packed = T : 'a t -> packed [@@unboxed]
 
   val of_int : int -> 'a t
+  val to_int : _ t -> int
 end = struct
   type 'a t = int
   type packed = T : 'a t -> packed [@@unboxed]
 
   let of_int = Fn.id
+  let to_int = Fn.id
 end
 
 module Info = struct
@@ -23,6 +25,8 @@ module Info = struct
      refcount:   15 bits 
      has_value:   1 bit
      dirty:       1 bit
+     :
+
    *)
 
   (* proposed (b54): 
@@ -44,7 +48,6 @@ module Info = struct
   |...| | | | | *)
 
   let int_to_bool : int -> bool = Obj.magic
-  let bool_to_int : bool -> int = Obj.magic
   let lnot x = x lxor -1
 
   let to_string ?(verbose = false) t =
@@ -54,7 +57,7 @@ module Info = struct
       | false -> ""
       | true ->
         let padding = String.length refcount in
-        let padding = String.init padding (Fn.const ' ') in
+        let padding = String.init padding ~f:(Fn.const ' ') in
         sprintf
           {|
 %s.--------------- refcount
@@ -90,7 +93,7 @@ module Info = struct
   let is_referenced t = refcount t <> 0 [@@inline always]
   let isn't_referenced t = refcount t = 0 [@@inline always]
   let refcount_is_one t = refcount t = 1 [@@inline always]
-  let has_value_and_cutoff t = t land 0b1010 = 0b1010
+  let _has_value_and_cutoff t = t land 0b1010 = 0b1010
 
   (* setters *)
   let set_dirty t = t lor 1 [@@inline always]
@@ -107,35 +110,35 @@ module Info = struct
   ;;
 end
 
-type int16_bigarray =
-  ( int
-  , Stdlib.Bigarray.int16_unsigned_elt
-  , Stdlib.Bigarray.c_layout )
-  Stdlib.Bigarray.Array0.t
-
 type t =
   { values : Obj_array.t
-  ; info : Info.t Array.t
+  ; mutable info' : Info_arr.info
   ; cutoffs : Obj_array.t
   ; sexp_ofs : Obj.t option Array.t
   ; names : string option Array.t
   ; computes : Obj_array.t
-  ; depends_on : Node0.packed Array.t Array.t
-  ; depended_on_by : Node0.packed Array.t Array.t
+  ; mutable depends_on' : Info_arr.depends_on
+  ; mutable depended_on_by' : Info_arr.depended_on_by
   ; length : int
   ; mutable next_id : int
+  ; mutable builder : Info_arr.Builder.t option
   }
 
 let create ~length =
+  let info', depends_on', depended_on_by' =
+    Info_arr.Builder.(finalize (create Info.init))
+  in
+  let builder = Some (Info_arr.Builder.create Info.init) in
   { values = Obj_array.init_empty length
-  ; info = Array.create ~len:length Info.init
+  ; info'
   ; cutoffs = Obj_array.init_empty length
-  ; sexp_ofs = Array.init length (fun _ -> None)
+  ; sexp_ofs = Array.init length ~f:(fun _ -> None)
   ; names = Array.init length ~f:(fun _ -> None)
   ; computes = Obj_array.init_empty length
-  ; depends_on = Array.create ~len:length Array.empty
-  ; depended_on_by = Array.create ~len:length Array.empty
+  ; depends_on'
+  ; depended_on_by'
   ; length
+  ; builder
   ; next_id = 0
   }
 ;;
@@ -158,22 +161,37 @@ let prepare
     (id : a Node0.t)
   =
   let id = (id :> int) in
+  (match env.builder with
+  | None -> failwith "Low.prepare called after finalization"
+  | Some b ->
+    let depends_on = Core.Array.map depends_on ~f:(fun (Node0.T t) -> Node0.to_int t) in
+    let depended_on_by =
+      Core.Array.map depended_on_by ~f:(fun (Node0.T t) -> Node0.to_int t)
+    in
+    Info_arr.Builder.add b (id :> int) ~depends_on ~depended_on_by);
   Obj_array.set_some env.computes id (Obj.repr compute);
-  Array.set env.depends_on id (Array.of_array depends_on);
-  Array.set env.depended_on_by id (Array.of_array depended_on_by);
   Array.set env.sexp_ofs id (Option.map sexp_of ~f:Obj.magic);
   Array.set env.names id name
 ;;
 
+let finalize t =
+  let builder = Option.value_exn t.builder in
+  let info', depends_on', depended_on_by' = Info_arr.Builder.finalize builder in
+  t.builder <- None;
+  t.info' <- info';
+  t.depends_on' <- depends_on';
+  t.depended_on_by' <- depended_on_by'
+;;
+
 let sexp_of_t t =
-  let sexps = Array.init t.length (fun _ -> Sexp.Atom "") in
+  let sexps = Array.init t.length ~f:(fun _ -> Sexp.Atom "") in
   for i = 0 to t.length - 1 do
     let name =
       match Array.get t.names i with
       | None -> sprintf "#%d:" i
       | Some name -> sprintf "%s#%d:" name i
     in
-    let info = Array.get t.info i in
+    let info = Info_arr.info t.info' i in
     let value =
       match Info.has_value info with
       | false -> Sexp.Atom "<empty>"
@@ -224,13 +242,13 @@ let debug t =
         Int.to_string refcount)
   in
   let ts =
-    List.init t.length (fun i ->
+    List.init t.length ~f:(fun i ->
         let name =
           match Array.get t.names i with
           | None -> ""
           | Some name -> name
         in
-        let info = Array.get t.info i in
+        let info = Info_arr.info t.info' i in
         let value =
           match Info.has_value info with
           | false -> Sexp.Atom "<empty>"
@@ -264,49 +282,58 @@ module Node = struct
   let rec incr_refcount : type a. _ -> a t -> unit =
    fun env (id : a t) : unit ->
     let id = (id :> int) in
-    let prev_info = Array.get env.info id in
+    let prev_info = Info_arr.info env.info' id in
     let new_info = Info.incr_refcount prev_info in
-    Array.set env.info id new_info;
+    Info_arr.set_info env.info' id new_info;
     if Info.isn't_referenced prev_info
     then (
-      let depends_on = Array.get env.depends_on id in
-      for i = 0 to Array.length depends_on - 1 do
-        let (T id) = Array.get depends_on i in
-        incr_refcount env id
+      let idx = Info_arr.depends_on_idx env.info' id in
+      let len = Info_arr.depends_on_length env.depends_on' idx in
+      for i = 0 to len - 1 do
+        let id = Info_arr.get_depends_on env.depends_on' idx i in
+        incr_refcount env (Node0.of_int id)
       done)
  ;;
 
   let rec decr_refcount : type a. _ -> a t -> unit =
    fun env (id : a t) : unit ->
     let id = (id :> int) in
-    let prev_info = Array.get env.info id in
+    let prev_info = Info_arr.info env.info' id in
     let new_info = Info.decr_refcount prev_info in
-    Array.set env.info id new_info;
+    Info_arr.set_info env.info' id new_info;
     if Info.refcount_is_one prev_info
     then (
-      let depends_on = Array.get env.depends_on id in
-      for i = 0 to Array.length depends_on - 1 do
-        let (T id) = Array.get depends_on i in
-        decr_refcount env id
+      let idx = Info_arr.depends_on_idx env.info' id in
+      let len = Info_arr.depends_on_length env.depends_on' idx in
+      for i = 0 to len - 1 do
+        let id = Info_arr.get_depends_on env.depends_on' idx i in
+        decr_refcount env (Node0.of_int id)
       done)
  ;;
 
   let is_dirty (type a) env (id : a t) : bool =
     let id = (id :> int) in
-    let info = Array.get env.info id in
+    let info = Info_arr.info env.info' id in
     Info.is_dirty info
   ;;
 
-  let mark_dirty (type a) env (id : a t) : unit =
+  let _mark_dirty (type a) env (id : a t) : unit =
     let id = (id :> int) in
-    let info = Array.get env.info id in
+    let info = Info_arr.info env.info' id in
     let new_info = Info.set_dirty info in
-    Array.set env.info id new_info
+    Info_arr.set_info env.info' id new_info
+  ;;
+
+  let mark_dirty (type a) info_arr (id : a t) : unit =
+    let id = (id :> int) in
+    let info = Info_arr.info info_arr id in
+    let new_info = Info.set_dirty info in
+    Info_arr.set_info info_arr id new_info
   ;;
 
   let has_value (type a) env (id : a t) : bool =
     let id = (id :> int) in
-    let info = Array.get env.info id in
+    let info = Info_arr.info env.info' id in
     Info.has_value info
   ;;
 
@@ -315,18 +342,18 @@ module Node = struct
     Obj_array.get_some env.values id |> (Obj.magic : Obj.t -> a)
   ;;
 
-  let propagate_dirty (type a) env (id : int) : unit =
-    let depends_on_me = Array.get env.depended_on_by id in
-    for i = 0 to Array.length depends_on_me - 1 do
-      let (T id) = Array.get depends_on_me i in
-      mark_dirty env id
+  let propagate_dirty' info' depended_on_by' (id : int) : unit =
+    let idx = Info_arr.depended_on_by_idx info' id in
+    let len = Info_arr.depended_on_by_length depended_on_by' idx in
+    for i = 0 to len - 1 do
+      let id = Info_arr.get_depended_on_by depended_on_by' idx i in
+      mark_dirty info' (Node0.of_int id)
     done;
     ()
   ;;
 
   let write_value_without_cutoff_or_propagating_dirtyness
       (type a)
-      env
       values
       (id : a t)
       (new_ : a)
@@ -336,7 +363,16 @@ module Node = struct
     Obj_array.set_some_assuming_currently_int values id (Obj.repr new_)
   ;;
 
-  let write_value_with_cutoff (type a) env values (id : a t) (new_ : a) : unit =
+  let write_value_with_cutoff
+      (type a)
+      env
+      values
+      info'
+      depended_on_by'
+      (id : a t)
+      (new_ : a)
+      : unit
+    =
     let id = (id :> int) in
     let cutoff =
       Obj_array.get_some env.cutoffs id |> (Obj.magic : Obj.t -> a -> a -> bool)
@@ -346,53 +382,76 @@ module Node = struct
     then ()
     else (
       Obj_array.set_some values id (Obj.repr new_);
-      propagate_dirty env id)
+      propagate_dirty' info' depended_on_by' id)
   ;;
 
-  let write_value_with_phys_equal (type a) env values (id : a t) (new_ : a) =
+  let write_value_with_phys_equal
+      (type a)
+      values
+      info'
+      depended_on_by'
+      (id : a t)
+      (new_ : a)
+    =
     let id = (id :> int) in
     let old = Obj_array.get_some values id |> (Obj.magic : Obj.t -> a) in
     if phys_equal old new_
     then ()
     else (
       Obj_array.set_some values id (Obj.repr new_);
-      propagate_dirty env id)
+      propagate_dirty' info' depended_on_by' id)
     [@@inline always]
   ;;
 
-  let write_value (type a) env values ~info (id : a t) (new_ : a) : unit =
-    if Info.has_value_and_cutoff info
-    then write_value_with_cutoff env values id new_
-    else write_value_with_phys_equal env values id new_
+  let write_value (type a) env values info' depended_on_by' ~info (id : a t) (new_ : a)
+      : unit
+    =
+    let has_value = Info.has_value info in
+    let has_cutoff = Info.has_cutoff info in
+    match has_value with
+    | false -> write_value_without_cutoff_or_propagating_dirtyness values id new_
+    | true ->
+      (match has_cutoff with
+      | true -> write_value_with_cutoff env values info' depended_on_by' id new_
+      | false -> write_value_with_phys_equal values info' depended_on_by' id new_)
     [@@inline always]
   ;;
 
-  let recompute (type a) env values ~info (id : a t) =
+  let mark_dirty (type a) env (id : a t) : unit =
+    let id = (id :> int) in
+    let info = Info_arr.info env.info' id in
+    let new_info = Info.set_dirty info in
+    Info_arr.set_info env.info' id new_info
+  ;;
+
+  let recompute (type a) env values info' depended_on_by' ~info (id : a t) =
     let id_i = (id :> int) in
     let compute =
       (Obj.magic : Obj.t -> unit -> a) (Obj_array.get_some env.computes id_i)
     in
-    write_value env values ~info id (compute ())
+    write_value env values info' depended_on_by' ~info id (compute ())
     [@@inline always]
   ;;
 
   let write_value (type a) env (id : a t) (new_ : a) : unit =
     let id_i = (id :> int) in
-    let info = Array.get env.info id_i in
+    let info = Info_arr.info env.info' id_i in
+    write_value env env.values env.info' env.depended_on_by' ~info id new_;
     let new_info = info |> Info.set_clean |> Info.set_has_value in
-    write_value env env.values ~info:new_info id new_;
-    Array.set env.info id_i new_info
+    Info_arr.set_info env.info' id_i new_info
   ;;
 end
 
 let stabilize env =
   let values = env.values in
+  let info' = env.info' in
+  let depended_on_by' = env.depended_on_by' in
   for i = 0 to env.length - 1 do
-    let info = Array.get env.info i in
+    let info = Info_arr.info info' i in
     if Bool.Non_short_circuiting.(Info.is_dirty info && Info.is_referenced info)
     then (
+      Node.recompute env values info' depended_on_by' ~info (Node.of_int i);
       let new_info = info |> Info.set_clean |> Info.set_has_value in
-      Node.recompute env values ~info:new_info (Node.of_int i);
-      Array.set env.info i new_info)
+      Info_arr.set_info info' i new_info)
   done
 ;;

@@ -1,0 +1,109 @@
+open! Core
+
+type int16_array =
+  ( int
+  , Stdlib.Bigarray.int16_unsigned_elt
+  , Stdlib.Bigarray.c_layout )
+  Stdlib.Bigarray.Array1.t
+
+let new_int16_array length : int16_array =
+  Stdlib.Bigarray.(Array1.create int16_unsigned c_layout length)
+;;
+
+type info = int16_array
+type depends_on = int array
+type depends_on_idx = int
+type depended_on_by = int array
+type depended_on_by_idx = int
+
+let create ~length = new_int16_array (length * 4)
+
+let depends_on_idx info i =
+  let naively = i * 2 in
+  let high = Bigarray.Array1.get info ((i * 4) + 1) in
+  let low = Bigarray.Array1.get info ((i * 4) + 2) in
+  naively + ((low + high) lsl 1)
+;;
+
+let depended_on_by_idx info i =
+  let naively = i * 2 in
+  let high = Bigarray.Array1.get info ((i * 4) + 1) in
+  let low = Bigarray.Array1.get info ((i * 4) + 3) in
+  naively + ((low + high) lsl 1)
+;;
+
+let depends_on_length depends_on idx = Array.get depends_on idx
+let get_depends_on depends_on idx offset = Array.get depends_on (idx + offset + 1)
+let depended_on_by_length depended_on_by idx = Array.get depended_on_by idx
+
+let get_depended_on_by depended_on_by idx offset =
+  Array.get depended_on_by (idx + offset + 1)
+;;
+
+module Builder = struct
+  type t =
+    { mutable nodes : (int array * int array) Int.Map.t
+    ; mutable count : int
+    }
+
+  let create () = { nodes = Int.Map.empty; count = 0 }
+
+  let add t id ~depends_on ~depended_on_by =
+    t.nodes <- Int.Map.add_exn t.nodes ~key:id ~data:(depends_on, depended_on_by);
+    t.count <- t.count + 1
+  ;;
+
+  let uint_16_max = Int.pow 2 16 - 1
+  let info_init = 0
+
+  let finalize t =
+    (* todo: assert that all nodes have been prepared *)
+    let nodes = t.nodes in
+    let a_size, b_size =
+      Map.fold nodes ~init:(0, 0) ~f:(fun ~key:_ ~data:(a, b) (a_size, b_size) ->
+          let a = a_size + 1 + Int.max 1 (Array.length a) in
+          let b = b_size + 1 + Int.max 1 (Array.length b) in
+          (if a % 2 = 0 then a else a + 1), if b % 2 = 0 then b else b + 1)
+    in
+    let info = new_int16_array (Map.length nodes * 4) in
+    let a_arr = Array.create ~len:a_size 0 in
+    let b_arr = Array.create ~len:b_size 0 in
+    let a_idx = ref 0 in
+    let b_idx = ref 0 in
+    Map.iteri nodes ~f:(fun ~key:i ~data:(a, b) ->
+        let expected_position = i * 2 in
+        let diff_a = !a_idx - expected_position in
+        let diff_b = !b_idx - expected_position in
+        let shared = Int.min diff_a diff_b in
+        let low_a = (diff_a - shared) lsr 1 in
+        let low_b = (diff_b - shared) lsr 1 in
+        let high = shared lsr 1 in
+        assert (high <= uint_16_max);
+        Bigarray.Array1.set info ((i * 4) + 0) info_init;
+        Bigarray.Array1.set info ((i * 4) + 1) high;
+        Bigarray.Array1.set info ((i * 4) + 2) low_a;
+        Bigarray.Array1.set info ((i * 4) + 3) low_b;
+        Array.set a_arr !a_idx (Array.length a);
+        Array.set b_arr !b_idx (Array.length b);
+        Array.blit
+          ~src:a
+          ~src_pos:0
+          ~dst:a_arr
+          ~dst_pos:(!a_idx + 1)
+          ~len:(Array.length a);
+        Array.blit
+          ~src:b
+          ~src_pos:0
+          ~dst:b_arr
+          ~dst_pos:(!b_idx + 1)
+          ~len:(Array.length b);
+        a_idx := !a_idx + 1 + Int.max 1 (Array.length a);
+        b_idx := !b_idx + 1 + Int.max 1 (Array.length b);
+        if !a_idx mod 2 = 1 then incr a_idx;
+        if !b_idx mod 2 = 1 then incr b_idx;
+        ());
+    assert (!a_idx = a_size);
+    assert (!b_idx = b_size);
+    info, a_arr, b_arr
+  ;;
+end

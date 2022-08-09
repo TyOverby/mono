@@ -88,7 +88,7 @@ let tree_with_tuples n () =
     { f =
         (fun (type a) (module Incr : Incremental.S with type state_witness = a) ->
           let var = Incr.Var.create 0 in
-          let node = make 15 (Incr.Var.watch var) in
+          let node = make n (Incr.Var.watch var) in
           let observer = Incr.observe node in
           var, observer)
     }
