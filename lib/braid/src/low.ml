@@ -112,31 +112,31 @@ end
 
 type t =
   { values : Obj_array.t
-  ; mutable info' : Info_arr.info
+  ; mutable info_arr : Info_arr.info
   ; cutoffs : Obj_array.t
   ; sexp_ofs : Obj.t option Array.t
   ; names : string option Array.t
   ; computes : Obj_array.t
-  ; mutable depends_on' : Info_arr.depends_on
-  ; mutable depended_on_by' : Info_arr.depended_on_by
+  ; mutable depends_on : Info_arr.depends_on
+  ; mutable depended_on : Info_arr.depended_on_by
   ; length : int
   ; mutable next_id : int
   ; mutable builder : Info_arr.Builder.t option
   }
 
 let create ~length =
-  let info', depends_on', depended_on_by' =
+  let info_arr, depends_on, depended_on =
     Info_arr.Builder.(finalize (create Info.init))
   in
   let builder = Some (Info_arr.Builder.create Info.init) in
   { values = Obj_array.init_empty length
-  ; info'
+  ; info_arr
   ; cutoffs = Obj_array.init_empty length
   ; sexp_ofs = Array.init length ~f:(fun _ -> None)
   ; names = Array.init length ~f:(fun _ -> None)
   ; computes = Obj_array.init_empty length
-  ; depends_on'
-  ; depended_on_by'
+  ; depends_on
+  ; depended_on
   ; length
   ; builder
   ; next_id = 0
@@ -176,11 +176,11 @@ let prepare
 
 let finalize t =
   let builder = Option.value_exn t.builder in
-  let info', depends_on', depended_on_by' = Info_arr.Builder.finalize builder in
+  let info_arr, depends_on, depended_on = Info_arr.Builder.finalize builder in
   t.builder <- None;
-  t.info' <- info';
-  t.depends_on' <- depends_on';
-  t.depended_on_by' <- depended_on_by'
+  t.info_arr <- info_arr;
+  t.depends_on <- depends_on;
+  t.depended_on <- depended_on
 ;;
 
 let sexp_of_t t =
@@ -191,7 +191,7 @@ let sexp_of_t t =
       | None -> sprintf "#%d:" i
       | Some name -> sprintf "%s#%d:" name i
     in
-    let info = Info_arr.info t.info' i in
+    let info = Info_arr.info t.info_arr i in
     let value =
       match Info.has_value info with
       | false -> Sexp.Atom "<empty>"
@@ -248,7 +248,7 @@ let debug t =
           | None -> ""
           | Some name -> name
         in
-        let info = Info_arr.info t.info' i in
+        let info = Info_arr.info t.info_arr i in
         let value =
           match Info.has_value info with
           | false -> Sexp.Atom "<empty>"
@@ -282,15 +282,15 @@ module Node = struct
   let rec incr_refcount : type a. _ -> a t -> unit =
    fun env (id : a t) : unit ->
     let id = (id :> int) in
-    let prev_info = Info_arr.info env.info' id in
+    let prev_info = Info_arr.info env.info_arr id in
     let new_info = Info.incr_refcount prev_info in
-    Info_arr.set_info env.info' id new_info;
+    Info_arr.set_info env.info_arr id new_info;
     if Info.isn't_referenced prev_info
     then (
-      let idx = Info_arr.depends_on_idx env.info' id in
-      let len = Info_arr.depends_on_length env.depends_on' idx in
+      let idx = Info_arr.depends_on_idx env.info_arr id in
+      let len = Info_arr.depends_on_length env.depends_on idx in
       for i = 0 to len - 1 do
-        let id = Info_arr.get_depends_on env.depends_on' idx i in
+        let id = Info_arr.get_depends_on env.depends_on idx i in
         incr_refcount env (Node0.of_int id)
       done)
  ;;
@@ -298,30 +298,30 @@ module Node = struct
   let rec decr_refcount : type a. _ -> a t -> unit =
    fun env (id : a t) : unit ->
     let id = (id :> int) in
-    let prev_info = Info_arr.info env.info' id in
+    let prev_info = Info_arr.info env.info_arr id in
     let new_info = Info.decr_refcount prev_info in
-    Info_arr.set_info env.info' id new_info;
+    Info_arr.set_info env.info_arr id new_info;
     if Info.refcount_is_one prev_info
     then (
-      let idx = Info_arr.depends_on_idx env.info' id in
-      let len = Info_arr.depends_on_length env.depends_on' idx in
+      let idx = Info_arr.depends_on_idx env.info_arr id in
+      let len = Info_arr.depends_on_length env.depends_on idx in
       for i = 0 to len - 1 do
-        let id = Info_arr.get_depends_on env.depends_on' idx i in
+        let id = Info_arr.get_depends_on env.depends_on idx i in
         decr_refcount env (Node0.of_int id)
       done)
  ;;
 
   let is_dirty (type a) env (id : a t) : bool =
     let id = (id :> int) in
-    let info = Info_arr.info env.info' id in
+    let info = Info_arr.info env.info_arr id in
     Info.is_dirty info
   ;;
 
   let _mark_dirty (type a) env (id : a t) : unit =
     let id = (id :> int) in
-    let info = Info_arr.info env.info' id in
+    let info = Info_arr.info env.info_arr id in
     let new_info = Info.set_dirty info in
-    Info_arr.set_info env.info' id new_info
+    Info_arr.set_info env.info_arr id new_info
   ;;
 
   let mark_dirty (type a) info_arr (id : a t) : unit =
@@ -333,7 +333,7 @@ module Node = struct
 
   let has_value (type a) env (id : a t) : bool =
     let id = (id :> int) in
-    let info = Info_arr.info env.info' id in
+    let info = Info_arr.info env.info_arr id in
     Info.has_value info
   ;;
 
@@ -342,12 +342,12 @@ module Node = struct
     Obj_array.get_some env.values id |> (Obj.magic : Obj.t -> a)
   ;;
 
-  let propagate_dirty' info' depended_on_by' (id : int) : unit =
-    let idx = Info_arr.depended_on_by_idx info' id in
-    let len = Info_arr.depended_on_by_length depended_on_by' idx in
+  let propagate_dirty' info_arr depended_on (id : int) : unit =
+    let idx = Info_arr.depended_on_by_idx info_arr id in
+    let len = Info_arr.depended_on_by_length depended_on idx in
     for i = 0 to len - 1 do
-      let id = Info_arr.get_depended_on_by depended_on_by' idx i in
-      mark_dirty info' (Node0.of_int id)
+      let id = Info_arr.get_depended_on_by depended_on idx i in
+      mark_dirty info_arr (Node0.of_int id)
     done;
     ()
   ;;
@@ -367,8 +367,8 @@ module Node = struct
       (type a)
       env
       values
-      info'
-      depended_on_by'
+      info_arr
+      depended_on
       (id : a t)
       (new_ : a)
       : unit
@@ -382,14 +382,14 @@ module Node = struct
     then ()
     else (
       Obj_array.set_some values id (Obj.repr new_);
-      propagate_dirty' info' depended_on_by' id)
+      propagate_dirty' info_arr depended_on id)
   ;;
 
   let write_value_with_phys_equal
       (type a)
       values
-      info'
-      depended_on_by'
+      info_arr
+      depended_on
       (id : a t)
       (new_ : a)
     =
@@ -399,11 +399,11 @@ module Node = struct
     then ()
     else (
       Obj_array.set_some values id (Obj.repr new_);
-      propagate_dirty' info' depended_on_by' id)
+      propagate_dirty' info_arr depended_on id)
     [@@inline always]
   ;;
 
-  let write_value (type a) env values info' depended_on_by' ~info (id : a t) (new_ : a)
+  let write_value (type a) env values info_arr depended_on ~info (id : a t) (new_ : a)
       : unit
     =
     let has_value = Info.has_value info in
@@ -412,46 +412,46 @@ module Node = struct
     | false -> write_value_without_cutoff_or_propagating_dirtyness values id new_
     | true ->
       (match has_cutoff with
-      | true -> write_value_with_cutoff env values info' depended_on_by' id new_
-      | false -> write_value_with_phys_equal values info' depended_on_by' id new_)
+      | true -> write_value_with_cutoff env values info_arr depended_on id new_
+      | false -> write_value_with_phys_equal values info_arr depended_on id new_)
     [@@inline always]
   ;;
 
   let mark_dirty (type a) env (id : a t) : unit =
     let id = (id :> int) in
-    let info = Info_arr.info env.info' id in
+    let info = Info_arr.info env.info_arr id in
     let new_info = Info.set_dirty info in
-    Info_arr.set_info env.info' id new_info
+    Info_arr.set_info env.info_arr id new_info
   ;;
 
-  let recompute (type a) env values info' depended_on_by' ~info (id : a t) =
+  let recompute (type a) env values info_arr depended_on ~info (id : a t) =
     let id_i = (id :> int) in
     let compute =
       (Obj.magic : Obj.t -> unit -> a) (Obj_array.get_some env.computes id_i)
     in
-    write_value env values info' depended_on_by' ~info id (compute ())
+    write_value env values info_arr depended_on ~info id (compute ())
     [@@inline always]
   ;;
 
   let write_value (type a) env (id : a t) (new_ : a) : unit =
     let id_i = (id :> int) in
-    let info = Info_arr.info env.info' id_i in
-    write_value env env.values env.info' env.depended_on_by' ~info id new_;
+    let info = Info_arr.info env.info_arr id_i in
+    write_value env env.values env.info_arr env.depended_on ~info id new_;
     let new_info = info |> Info.set_clean |> Info.set_has_value in
-    Info_arr.set_info env.info' id_i new_info
+    Info_arr.set_info env.info_arr id_i new_info
   ;;
 end
 
 let stabilize env =
   let values = env.values in
-  let info' = env.info' in
-  let depended_on_by' = env.depended_on_by' in
+  let info_arr = env.info_arr in
+  let depended_on = env.depended_on in
   for i = 0 to env.length - 1 do
-    let info = Info_arr.info info' i in
+    let info = Info_arr.info info_arr i in
     if Bool.Non_short_circuiting.(Info.is_dirty info && Info.is_referenced info)
     then (
-      Node.recompute env values info' depended_on_by' ~info (Node.of_int i);
+      Node.recompute env values info_arr depended_on ~info (Node.of_int i);
       let new_info = info |> Info.set_clean |> Info.set_has_value in
-      Info_arr.set_info info' i new_info)
+      Info_arr.set_info info_arr i new_info)
   done
 ;;

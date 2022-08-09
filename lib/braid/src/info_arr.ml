@@ -17,10 +17,11 @@ type depends_on_idx = int
 type depended_on_by = int Array.t
 type depended_on_by_idx = int
 
-let info info i = Array.get info ((i * 3) + 0)
-let set_info info i v = Array.set info ((i * 3) + 0) v
-let depends_on_idx info i = Array.get info ((i * 3) + 1)
-let depended_on_by_idx info i = Array.get info ((i * 3) + 2)
+let uint_32_max = Int.pow 2 32 - 1
+let info info i = Array.get info ((i * 2) + 0)
+let set_info info i v = Array.set info ((i * 2) + 0) v
+let depends_on_idx info i = Array.get info ((i * 2) + 1) lsr 32
+let depended_on_by_idx info i = Array.get info ((i * 2) + 1) land uint_32_max
 let depends_on_length depends_on idx = Array.get depends_on idx
 let get_depends_on depends_on idx offset = Array.get depends_on (idx + offset + 1)
 let depended_on_by_length depended_on_by idx = Array.get depended_on_by idx
@@ -56,15 +57,14 @@ module Builder = struct
           let b = b_size + 1 + Array.length b in
           a, b)
     in
-    let info = Array.init (Map.length nodes * 3) ~f:(fun _ -> 0) in
+    let info = Array.init (Map.length nodes * 2) ~f:(fun _ -> 0) in
     let a_arr = Array.create ~len:a_size 0 in
     let b_arr = Array.create ~len:b_size 0 in
     let a_idx = ref 0 in
     let b_idx = ref 0 in
     Map.iteri nodes ~f:(fun ~key:i ~data:(a, b) ->
-        Array.set info ((i * 3) + 0) t.info_init;
-        Array.set info ((i * 3) + 1) !a_idx;
-        Array.set info ((i * 3) + 2) !b_idx;
+        Array.set info ((i * 2) + 0) t.info_init;
+        Array.set info ((i * 2) + 1) ((!a_idx lsl 32) + !b_idx);
         Array.set a_arr !a_idx (Array.length a);
         Array.set b_arr !b_idx (Array.length b);
         Array.blit
