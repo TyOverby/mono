@@ -29,8 +29,11 @@ val arr4
 
 val if_ : bool Value.t -> then_:'a Value.t -> else_:'a Value.t -> 'a Value.t t
 val bind : 'a t -> f:('a -> 'b t) -> 'b t
+val state : 'a -> ('a Value.t * (('a -> 'a) -> unit) Value.t) t
 
 module Let_syntax : sig
+  val return : 'a -> 'a t
+
   module Let_syntax : sig
     val bind : 'a t -> f:('a -> 'b t) -> 'b t
     val return : 'a -> 'a t

@@ -86,28 +86,39 @@ module Info = struct
   ;;
 
   (* getters *)
-  let is_dirty t = int_to_bool ((t lsr 0) land 1) [@@inline always]
-  let has_value t = int_to_bool ((t lsr 1) land 1) [@@inline always]
-  let has_cutoff t = int_to_bool ((t lsr 3) land 1) [@@inline always]
-  let refcount t = t lsr 4 [@@inline always]
-  let is_referenced t = refcount t <> 0 [@@inline always]
-  let isn't_referenced t = refcount t = 0 [@@inline always]
-  let refcount_is_one t = refcount t = 1 [@@inline always]
+  let is_dirty t = int_to_bool ((t lsr 0) land 1) (*[@@inline always]*)
+
+  let has_value t = int_to_bool ((t lsr 1) land 1) (*[@@inline always]*)
+
+  let has_cutoff t = int_to_bool ((t lsr 3) land 1) (*[@@inline always]*)
+
+  let refcount t = t lsr 4 (*[@@inline always]*)
+
+  let is_referenced t = refcount t <> 0 (*[@@inline always]*)
+
+  let isn't_referenced t = refcount t = 0 (*[@@inline always]*)
+
+  let refcount_is_one t = refcount t = 1 (*[@@inline always]*)
+
   let _has_value_and_cutoff t = t land 0b1010 = 0b1010
 
   (* setters *)
-  let set_dirty t = t lor 1 [@@inline always]
-  let set_clean t = t land lnot (1 lsl 0) [@@inline always]
-  let set_has_value t = t lor (1 lsl 1) [@@inline always]
-  let set_has_cutoff t = t lor (1 lsl 3) [@@inline always]
+  let set_dirty t = t lor 1 (*[@@inline always]*)
+
+  let set_clean t = t land lnot (1 lsl 0) (*[@@inline always]*)
+
+  let set_has_value t = t lor (1 lsl 1) (*[@@inline always]*)
+
+  let set_has_cutoff t = t lor (1 lsl 3) (*[@@inline always]*)
+
   let init = set_dirty 0
-  let incr_refcount t = t + (1 lsl 4) [@@inline always]
+  let incr_refcount t = t + (1 lsl 4) (*[@@inline always]*)
 
   let decr_refcount t =
     (* debug assert refcount t <> 0 *)
     t - (1 lsl 4)
-    [@@inline always]
   ;;
+  (*[@@inline always]*)
 end
 
 type t =
@@ -317,19 +328,17 @@ module Node = struct
     Info.is_dirty info
   ;;
 
-  let _mark_dirty (type a) env (id : a t) : unit =
-    let id = (id :> int) in
-    let info = Info_arr.info env.info_arr id in
-    let new_info = Info.set_dirty info in
-    Info_arr.set_info env.info_arr id new_info
-  ;;
-
   let mark_dirty (type a) info_arr (id : a t) : unit =
     let id = (id :> int) in
     let info = Info_arr.info info_arr id in
-    let new_info = Info.set_dirty info in
-    Info_arr.set_info info_arr id new_info
+    if Info.is_dirty info
+    then ()
+    else (
+      let new_info = Info.set_dirty info in
+      Info_arr.set_info info_arr id new_info)
   ;;
+
+  (*[@@inline always]*)
 
   let has_value (type a) env (id : a t) : bool =
     let id = (id :> int) in
@@ -352,16 +361,19 @@ module Node = struct
     ()
   ;;
 
+  (*[@@inline always]*)
+
   let write_value_without_cutoff_or_propagating_dirtyness
       (type a)
       values
       (id : a t)
       (new_ : a)
-      : unit
     =
     let id = (id :> int) in
     Obj_array.set_some_assuming_currently_int values id (Obj.repr new_)
   ;;
+
+  (*[@@inline always]*)
 
   let write_value_with_cutoff
       (type a)
@@ -371,7 +383,6 @@ module Node = struct
       depended_on
       (id : a t)
       (new_ : a)
-      : unit
     =
     let id = (id :> int) in
     let cutoff =
@@ -400,12 +411,11 @@ module Node = struct
     else (
       Obj_array.set_some values id (Obj.repr new_);
       propagate_dirty' info_arr depended_on id)
-    [@@inline always]
   ;;
 
-  let write_value (type a) env values info_arr depended_on ~info (id : a t) (new_ : a)
-      : unit
-    =
+  (*[@@inline always]*)
+
+  let write_value env values info_arr depended_on ~info id new_ =
     let has_value = Info.has_value info in
     let has_cutoff = Info.has_cutoff info in
     match has_value with
@@ -414,15 +424,11 @@ module Node = struct
       (match has_cutoff with
       | true -> write_value_with_cutoff env values info_arr depended_on id new_
       | false -> write_value_with_phys_equal values info_arr depended_on id new_)
-    [@@inline always]
   ;;
 
-  let mark_dirty (type a) env (id : a t) : unit =
-    let id = (id :> int) in
-    let info = Info_arr.info env.info_arr id in
-    let new_info = Info.set_dirty info in
-    Info_arr.set_info env.info_arr id new_info
-  ;;
+  (*[@@inline always]*)
+
+  let mark_dirty env id = mark_dirty env.info_arr id
 
   let recompute (type a) env values info_arr depended_on ~info (id : a t) =
     let id_i = (id :> int) in
@@ -430,10 +436,11 @@ module Node = struct
       (Obj.magic : Obj.t -> unit -> a) (Obj_array.get_some env.computes id_i)
     in
     write_value env values info_arr depended_on ~info id (compute ())
-    [@@inline always]
   ;;
 
-  let write_value (type a) env (id : a t) (new_ : a) : unit =
+  (*[@@inline always]*)
+
+  let write_value (type a) env (id : a t) (new_ : a) =
     let id_i = (id :> int) in
     let info = Info_arr.info env.info_arr id_i in
     write_value env env.values env.info_arr env.depended_on ~info id new_;
@@ -451,6 +458,22 @@ let stabilize env =
     if Bool.Non_short_circuiting.(Info.is_dirty info && Info.is_referenced info)
     then (
       Node.recompute env values info_arr depended_on ~info (Node.of_int i);
+      let new_info = info |> Info.set_clean |> Info.set_has_value in
+      Info_arr.set_info info_arr i new_info)
+  done
+;;
+
+let stabilize' env =
+  let values = env.values in
+  let info_arr = env.info_arr in
+  let depended_on = env.depended_on in
+  for i = 0 to env.length - 1 do
+    let info = Info_arr.info info_arr i in
+    let compute = (Obj.magic : Obj.t -> unit -> _) (Obj_array.get_some env.computes i) in
+    let new_ = compute () in
+    if Bool.Non_short_circuiting.(Info.is_dirty info && Info.is_referenced info)
+    then (
+      Node.write_value_with_phys_equal values info_arr depended_on (Node0.of_int i) new_;
       let new_info = info |> Info.set_clean |> Info.set_has_value in
       Info_arr.set_info info_arr i new_info)
   done

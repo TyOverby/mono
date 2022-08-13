@@ -170,6 +170,7 @@ type 'a t =
   | Const : 'a -> 'a Value.t t
   | Actually_const : 'a -> 'a Value.t t
   | Arr : 'r Arr.t -> 'r Value.t t
+  | State : 's -> ('s Value.t * (('s -> 's) -> unit) Value.t) t
   | Bind :
       { a : 'a t
       ; f : 'a -> 'b t
@@ -191,8 +192,11 @@ let arr3 a b c ~f = Arr (Arr3 { a; b; c; f })
 let arr4 a b c d ~f = Arr (Arr4 { a; b; c; d; f })
 let bind a ~f = Bind { a; f }
 let if_ cond ~then_ ~else_ = If { cond; then_; else_ }
+let state init = State init
 
 module Let_syntax = struct
+  let return = return
+
   module Let_syntax = struct
     let bind = bind
     let return = return
@@ -213,6 +217,13 @@ let rec lower : type a. Mid.t -> Env.t -> a t -> Mid.t * Env.t * a =
     let mid, value_or_node = Arr.eval mid env arr in
     let value, env = Value_or_node.to_value env value_or_node in
     mid, env, value
+  | State init ->
+    let mid, cur, update = Mid.state mid ~init in
+    let cur_name = Name.create () in
+    let update_name = Name.create () in
+    let env = Env.set env ~key:cur_name ~data:cur in
+    let env = Env.set env ~key:update_name ~data:update in
+    mid, env, (Name cur_name, Name update_name)
   | If { cond; then_; else_ } ->
     (match cond with
     | Value.Exception _ as exn -> mid, env, exn

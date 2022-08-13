@@ -73,6 +73,13 @@ val if_
   -> else_:'a Node.t
   -> t * 'a Node.t
 
+val state
+  :  ?sexp_of:('a -> Sexp.t)
+  -> ?name:string
+  -> t
+  -> init:'a
+  -> t * 'a Node.t * (('a -> 'a) -> unit) Node.t
+
 module Expert : sig
   type lookup = { f : 'a. 'a Node.t -> 'a Low.Node.t }
 
@@ -86,4 +93,10 @@ module Expert : sig
     -> depends_on:Node.Packed.t list
     -> compute:(Low.t -> lookup -> me:'a Node.t -> unit -> 'a)
     -> t * 'a Node.t
+
+  val add2
+    :  t
+    -> fa:(t -> 'b Node.t Lazy.t -> t * 'a Node.t)
+    -> fb:(t -> 'a Node.t -> t * 'b Node.t)
+    -> t * 'a Node.t * 'b Node.t
 end

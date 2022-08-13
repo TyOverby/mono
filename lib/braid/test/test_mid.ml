@@ -42,7 +42,8 @@ let%expect_test "addition" =
   in
   let low, lookup = Mid.Expert.lower mid in
   print_env low;
-  [%expect{|
+  [%expect
+    {|
     ┌───┬───┬─────────┬───┬───┐
     │ # │ @ │ V       │ ? │ R │
     ├───┼───┼─────────┼───┼───┤
@@ -53,7 +54,8 @@ let%expect_test "addition" =
   Low.Node.incr_refcount low (lookup.f c);
   Low.stabilize low;
   print_env low;
-  [%expect{|
+  [%expect
+    {|
     ┌───┬───┬───┬───┬───┐
     │ # │ @ │ V │ ? │ R │
     ├───┼───┼───┼───┼───┤
@@ -114,9 +116,6 @@ let%expect_test "if" =
                let i_have_value () = Low.Node.has_value low my_id in
                let my_previous_value () = Low.Node.read_value low my_id in
                let cond_value () = Low.Node.read_value low cond_id in
-
-               (**)
-
                let prev = if i_have_value () then my_previous_value () else -1 in
                let next = cond_value () in
                if prev = next
@@ -157,7 +156,8 @@ let%expect_test "if" =
   let (lazy (mid, _switch_in, switch_out)) = mid__switch_in__switch_out in
   let low, lookup = Mid.Expert.lower mid in
   print_env low;
-  [%expect{|
+  [%expect
+    {|
     ┌───┬────────────┬─────────┬───┬───┐
     │ # │ @          │ V       │ ? │ R │
     ├───┼────────────┼─────────┼───┼───┤
@@ -170,7 +170,8 @@ let%expect_test "if" =
   Low.Node.incr_refcount low (lookup.f switch_out);
   Low.stabilize low;
   print_env low;
-  [%expect{|
+  [%expect
+    {|
     ┌───┬────────────┬─────────┬───┬───┐
     │ # │ @          │ V       │ ? │ R │
     ├───┼────────────┼─────────┼───┼───┤
@@ -183,7 +184,8 @@ let%expect_test "if" =
   Low.Node.write_value low (lookup.f cond) 1;
   Low.stabilize low;
   print_env low;
-  [%expect{|
+  [%expect
+    {|
     ┌───┬────────────┬───────┬───┬───┐
     │ # │ @          │ V     │ ? │ R │
     ├───┼────────────┼───────┼───┼───┤
@@ -201,7 +203,7 @@ let%expect_test "pretty addition" =
   let mid, b = Mid.const mid ~name:"b" ~sexp_of:[%sexp_of: int] 3 in
   let mid, c = Mid.map2 mid ~name:"c" ~sexp_of:[%sexp_of: int] a b ~f:( + ) in
   compile_and_compute mid c;
-  [%expect{| 5 |}]
+  [%expect {| 5 |}]
 ;;
 
 let%expect_test "pretty if" =
@@ -212,10 +214,10 @@ let%expect_test "pretty if" =
   let mid, b = Mid.const mid ~name:"b" ~sexp_of:[%sexp_of: int] 5 in
   let mid, b' = Mid.map mid ~name:"b'" ~sexp_of:[%sexp_of: int] b ~f:(fun a -> a + 1) in
   let mid, out = Mid.if_ mid cond ~then_:a' ~else_:b' in
-  (* *)
   let low, lookup = Mid.Expert.lower mid in
   print_env low;
-  [%expect{|
+  [%expect
+    {|
     ┌───┬────────┬─────────┬───┬───┐
     │ # │ @      │ V       │ ? │ R │
     ├───┼────────┼─────────┼───┼───┤
@@ -229,7 +231,8 @@ let%expect_test "pretty if" =
     └───┴────────┴─────────┴───┴───┘ |}];
   Low.Node.incr_refcount low (lookup.f out);
   print_env low;
-  [%expect{|
+  [%expect
+    {|
     ┌───┬────────┬─────────┬───┬───┐
     │ # │ @      │ V       │ ? │ R │
     ├───┼────────┼─────────┼───┼───┤
@@ -243,7 +246,8 @@ let%expect_test "pretty if" =
     └───┴────────┴─────────┴───┴───┘ |}];
   Low.stabilize low;
   print_env low;
-  [%expect{|
+  [%expect
+    {|
     ┌───┬────────┬─────────┬───┬───┐
     │ # │ @      │ V       │ ? │ R │
     ├───┼────────┼─────────┼───┼───┤
@@ -255,4 +259,156 @@ let%expect_test "pretty if" =
     │ 5 │ b'     │ <empty> │ x │ 0 │
     │ 6 │ if-out │ 4       │ - │ 1 │
     └───┴────────┴─────────┴───┴───┘ |}]
+;;
+
+let%expect_test "state" =
+  let mid = Mid.empty in
+  let mid, state, set_state = Mid.state mid ~sexp_of:[%sexp_of: string] ~init:"hello" in
+  let low, lookup = Mid.Expert.lower mid in
+  print_env low;
+  [%expect
+    {|
+    ┌───┬───┬─────────┬───┬───┐
+    │ # │ @ │ V       │ ? │ R │
+    ├───┼───┼─────────┼───┼───┤
+    │ 0 │   │ <empty> │ x │ 0 │
+    │ 1 │   │ <empty> │ x │ 0 │
+    │ 2 │   │ <empty> │ x │ 0 │
+    │ 3 │   │ <empty> │ x │ 0 │
+    │ 4 │   │ <empty> │ x │ 0 │
+    └───┴───┴─────────┴───┴───┘ |}];
+  Low.Node.incr_refcount low (lookup.f state);
+  print_env low;
+  [%expect
+    {|
+    ┌───┬───┬─────────┬───┬───┐
+    │ # │ @ │ V       │ ? │ R │
+    ├───┼───┼─────────┼───┼───┤
+    │ 0 │   │ <empty> │ x │ 1 │
+    │ 1 │   │ <empty> │ x │ 1 │
+    │ 2 │   │ <empty> │ x │ 0 │
+    │ 3 │   │ <empty> │ x │ 1 │
+    │ 4 │   │ <empty> │ x │ 1 │
+    └───┴───┴─────────┴───┴───┘ |}];
+  Low.stabilize low;
+  print_env low;
+  [%expect
+    {|
+    ┌───┬───┬─────────┬───┬───┐
+    │ # │ @ │ V       │ ? │ R │
+    ├───┼───┼─────────┼───┼───┤
+    │ 0 │   │ hello   │ - │ 1 │
+    │ 1 │   │ hello   │ - │ 1 │
+    │ 2 │   │ <empty> │ x │ 0 │
+    │ 3 │   │ false   │ - │ 1 │
+    │ 4 │   │ hello   │ - │ 1 │
+    └───┴───┴─────────┴───┴───┘ |}];
+  Low.Node.incr_refcount low (lookup.f set_state);
+  Low.stabilize low;
+  print_env low;
+  [%expect
+    {|
+    ┌───┬───┬──────────┬───┬───┐
+    │ # │ @ │ V        │ ? │ R │
+    ├───┼───┼──────────┼───┼───┤
+    │ 0 │   │ hello    │ - │ 1 │
+    │ 1 │   │ hello    │ - │ 1 │
+    │ 2 │   │ <filled> │ - │ 1 │
+    │ 3 │   │ false    │ - │ 1 │
+    │ 4 │   │ hello    │ - │ 1 │
+    └───┴───┴──────────┴───┴───┘ |}];
+  let set = Low.Node.read_value low (lookup.f set_state) in
+  set (fun prev ->
+      print_s [%message (prev : string)];
+      "world");
+  print_env low;
+  [%expect
+    {|
+    (prev hello)
+    ┌───┬───┬──────────┬───┬───┐
+    │ # │ @ │ V        │ ? │ R │
+    ├───┼───┼──────────┼───┼───┤
+    │ 0 │   │ hello    │ - │ 1 │
+    │ 1 │   │ world    │ - │ 1 │
+    │ 2 │   │ <filled> │ - │ 1 │
+    │ 3 │   │ false    │ x │ 1 │
+    │ 4 │   │ hello    │ - │ 1 │
+    └───┴───┴──────────┴───┴───┘ |}];
+  Low.stabilize low;
+  print_env low;
+  [%expect
+    {|
+    ┌───┬───┬──────────┬───┬───┐
+    │ # │ @ │ V        │ ? │ R │
+    ├───┼───┼──────────┼───┼───┤
+    │ 0 │   │ world    │ - │ 1 │
+    │ 1 │   │ world    │ - │ 1 │
+    │ 2 │   │ <filled> │ - │ 1 │
+    │ 3 │   │ true     │ - │ 1 │
+    │ 4 │   │ world    │ - │ 1 │
+    └───┴───┴──────────┴───┴───┘ |}];
+  set (fun prev ->
+      print_s [%message (prev : string)];
+      "hey_there");
+  print_env low;
+  [%expect
+    {|
+    (prev world)
+    ┌───┬───┬───────────┬───┬───┐
+    │ # │ @ │ V         │ ? │ R │
+    ├───┼───┼───────────┼───┼───┤
+    │ 0 │   │ hey_there │ - │ 1 │
+    │ 1 │   │ world     │ - │ 1 │
+    │ 2 │   │ <filled>  │ - │ 1 │
+    │ 3 │   │ true      │ x │ 1 │
+    │ 4 │   │ world     │ - │ 1 │
+    └───┴───┴───────────┴───┴───┘ |}];
+  Low.stabilize low;
+  print_env low;
+  [%expect
+    {|
+    ┌───┬───┬───────────┬───┬───┐
+    │ # │ @ │ V         │ ? │ R │
+    ├───┼───┼───────────┼───┼───┤
+    │ 0 │   │ hey_there │ - │ 1 │
+    │ 1 │   │ hey_there │ - │ 1 │
+    │ 2 │   │ <filled>  │ - │ 1 │
+    │ 3 │   │ false     │ - │ 1 │
+    │ 4 │   │ hey_there │ - │ 1 │
+    └───┴───┴───────────┴───┴───┘ |}];
+  set (fun prev ->
+      print_s [%message (prev : string)];
+      "x");
+  set (fun prev ->
+      print_s [%message (prev : string)];
+      "y");
+  set (fun prev ->
+      print_s [%message (prev : string)];
+      "z");
+  print_env low;
+  Low.stabilize low;
+  print_env low;
+  [%expect {|
+    (prev hey_there)
+    (prev x)
+    (prev y)
+    ┌───┬───┬───────────┬───┬───┐
+    │ # │ @ │ V         │ ? │ R │
+    ├───┼───┼───────────┼───┼───┤
+    │ 0 │   │ hey_there │ - │ 1 │
+    │ 1 │   │ z         │ - │ 1 │
+    │ 2 │   │ <filled>  │ - │ 1 │
+    │ 3 │   │ false     │ x │ 1 │
+    │ 4 │   │ hey_there │ - │ 1 │
+    └───┴───┴───────────┴───┴───┘
+
+    ┌───┬───┬──────────┬───┬───┐
+    │ # │ @ │ V        │ ? │ R │
+    ├───┼───┼──────────┼───┼───┤
+    │ 0 │   │ z        │ - │ 1 │
+    │ 1 │   │ z        │ - │ 1 │
+    │ 2 │   │ <filled> │ - │ 1 │
+    │ 3 │   │ true     │ - │ 1 │
+    │ 4 │   │ z        │ - │ 1 │
+    └───┴───┴──────────┴───┴───┘ |}]
 ;;
