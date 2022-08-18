@@ -80,6 +80,13 @@ val state
   -> init:'a
   -> t * 'a Node.t * (('a -> 'a) -> unit) Node.t
 
+val state'
+  :  ?sexp_of:('a -> Sexp.t)
+  -> ?name:string
+  -> t
+  -> init:'a Node.t
+  -> t * 'a Node.t * (('a -> 'a) -> unit) Node.t
+
 module Expert : sig
   type lookup = { f : 'a. 'a Node.t -> 'a Low.Node.t }
 

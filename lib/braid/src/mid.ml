@@ -4,6 +4,7 @@ module Priority = struct
   type kind = Switch [@@deriving compare, sexp_of]
 
   type t =
+    | Immediately
     | Reward of kind
     | Neutral of int
     | Punish of kind
@@ -15,6 +16,8 @@ module Priority = struct
     let by_id = compare_int a_id b_id in
     let by_iter = compare_int a_iter b_iter in
     match a, b with
+    | Immediately, _ -> -1
+    | _, Immediately -> 1
     | Reward ak, Reward bk ->
       let by_kind = compare_kind ak bk in
       by_kind |> multi_compare ~fallback:by_iter |> multi_compare ~fallback:by_id
@@ -117,13 +120,13 @@ let rec propagate_priorities (t : t) (T node : Node.Packed.t) ~priority =
     | Priority.Reward _ -> continue, Priority.Neutral 0
     | Neutral i -> continue, Neutral (i + 1)
     | Punish _ -> false, Neutral 0
+    | Immediately -> false, Immediately
   in
   if continue
   then
     Map.find t.depends_on (T node)
     |> Option.value ~default:Node.Packed.Set.empty
-    |> Set.fold ~init:t ~f:(fun t node ->
-           propagate_priorities t node ~priority:subsequent_priorities)
+    |> Set.fold ~init:t ~f:(propagate_priorities ~priority:subsequent_priorities)
   else t
 ;;
 
@@ -384,76 +387,73 @@ let if_ ?sexp_of t cond ~then_:a ~else_:b =
 ;;
 
 let state ?sexp_of ?name mid ~init =
-  let name_green = Option.map name ~f:(( ^ ) " (green)") in
-  let name_blue = Option.map name ~f:(( ^ ) " (blue)") in
-  let name_which = Option.map name ~f:(( ^ ) " (which)") in
-  let name_cur_state = Option.map name ~f:(( ^ ) " (cur state)") in
+  let name_storage = Option.map name ~f:(( ^ ) " (storage)") in
+  let name_cur_state = Option.map name ~f:(( ^ ) " (current state)") in
   let name_setter = Option.map name ~f:(( ^ ) " (setter)") in
-  let make mid ~name =
-    add mid ?name ?sexp_of ~depends_on:[] ~compute:(fun low lookup ~me ->
+  let mid, storage =
+    add mid ?name:name_storage ?sexp_of ~depends_on:[] ~compute:(fun low lookup ~me ->
         let my_id = lookup.f me in
         fun () ->
           if Low.Node.has_value low my_id then Low.Node.read_value low my_id else init)
   in
-  let mid, green = make mid ~name:name_green in
-  let mid, blue = make mid ~name:name_blue in
-  let mid, which =
+  let mid, current_state =
     add
       mid
-      ?name:name_which
-      ~sexp_of:sexp_of_bool
-      ~depends_on:[ T green; T blue ]
-      ~compute:(fun low lookup ~me ->
-        let green_id = lookup.f green in
-        let blue_id = lookup.f blue in
-        let my_id = lookup.f me in
-        fun () ->
-          if Low.Node.has_value low my_id
-          then (
-            match Low.Node.read_value low my_id with
-            | false ->
-              Low.Node.write_value low green_id (Low.Node.read_value low blue_id);
-              true
-            | true ->
-              Low.Node.write_value low blue_id (Low.Node.read_value low green_id);
-              false)
-          else false)
-  in
-  let mid, cur_state =
-    add
-      mid
-      ?sexp_of
       ?name:name_cur_state
-      ~depends_on:[ T which ]
+      ?sexp_of
+      ~priority:Immediately
+      ~depends_on:[ T storage ]
       ~compute:(fun low lookup ~me:_ ->
-        let green_id = lookup.f green in
-        let blue_id = lookup.f blue in
-        let which_id = lookup.f which in
-        fun () ->
-          match Low.Node.read_value low which_id with
-          | false -> Low.Node.read_value low green_id
-          | true -> Low.Node.read_value low blue_id)
+        let storage_id = lookup.f storage in
+        fun () -> Low.Node.read_value low storage_id)
   in
   let mid, setter =
-    add mid ?name:name_setter ~depends_on:[] ~compute:(fun low lookup ~me:_ ->
-        let green_id = lookup.f green in
-        let blue_id = lookup.f blue in
-        let which_id = lookup.f which in
+    add mid ?name:name_setter ~depends_on:[ T storage ] ~compute:(fun low lookup ~me:_ ->
+        let storage_id = lookup.f storage in
         fun () update_f ->
-          if not (Low.Node.has_value low which_id)
-          then Low.Node.write_value low blue_id (update_f init)
-          else (
-            match Low.Node.read_value low which_id with
-            | false ->
-              Low.Node.write_value
-                low
-                blue_id
-                (update_f (Low.Node.read_value low blue_id))
-            | true ->
-              Low.Node.write_value
-                low
-                green_id
-                (update_f (Low.Node.read_value low green_id))))
+          let prev = Low.Node.read_value low storage_id in
+          let next = update_f prev in
+          Low.Node.write_value low storage_id next)
   in
-  mid, cur_state, setter
+  mid, current_state, setter
+;;
+
+let state' ?sexp_of ?name mid ~init =
+  let name_storage = Option.map name ~f:(( ^ ) " (storage)") in
+  let name_cur_state = Option.map name ~f:(( ^ ) " (current state)") in
+  let name_setter = Option.map name ~f:(( ^ ) " (setter)") in
+  let mid, storage =
+    add
+      mid
+      ?name:name_storage
+      ?sexp_of
+      ~depends_on:[ T init ]
+      ~compute:(fun low lookup ~me ->
+        let my_id = lookup.f me in
+        let init_id = lookup.f init in
+        fun () ->
+          if Low.Node.has_value low my_id
+          then Low.Node.read_value low my_id
+          else Low.Node.read_value low init_id)
+  in
+  let mid, current_state =
+    add
+      mid
+      ?name:name_cur_state
+      ?sexp_of
+      ~priority:Immediately
+      ~depends_on:[ T storage ]
+      ~compute:(fun low lookup ~me:_ ->
+        let storage_id = lookup.f storage in
+        fun () -> Low.Node.read_value low storage_id)
+  in
+  let mid, setter =
+    add mid ?name:name_setter ~depends_on:[ T storage ] ~compute:(fun low lookup ~me:_ ->
+        let storage_id = lookup.f storage in
+        fun () update_f ->
+          let prev = Low.Node.read_value low storage_id in
+          let next = update_f prev in
+          Low.Node.write_value low storage_id next)
+  in
+  mid, current_state, setter
 ;;

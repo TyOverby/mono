@@ -140,21 +140,17 @@ let%expect_test "addition" =
   print_env low;
   [%expect
     {|
-    ┌────┬───┬──────────┬───┬───┐
-    │  # │ @ │ V        │ ? │ R │
-    ├────┼───┼──────────┼───┼───┤
-    │  0 │   │ <filled> │ - │ 1 │
-    │  1 │   │ <filled> │ - │ 1 │
-    │  2 │   │ <filled> │ - │ 1 │
-    │  3 │   │ <filled> │ - │ 1 │
-    │  4 │   │ <filled> │ - │ 1 │
-    │  5 │   │ <filled> │ - │ 1 │
-    │  6 │   │ false    │ - │ 1 │
-    │  7 │   │ false    │ - │ 1 │
-    │  8 │   │ <filled> │ - │ 1 │
-    │  9 │   │ <filled> │ - │ 1 │
-    │ 10 │   │ <filled> │ - │ 1 │
-    └────┴───┴──────────┴───┴───┘ |}];
+    ┌───┬───┬──────────┬───┬───┐
+    │ # │ @ │ V        │ ? │ R │
+    ├───┼───┼──────────┼───┼───┤
+    │ 0 │   │ <filled> │ - │ 2 │
+    │ 1 │   │ <filled> │ - │ 1 │
+    │ 2 │   │ <filled> │ - │ 2 │
+    │ 3 │   │ <filled> │ - │ 1 │
+    │ 4 │   │ <filled> │ - │ 1 │
+    │ 5 │   │ <filled> │ - │ 1 │
+    │ 6 │   │ <filled> │ - │ 1 │
+    └───┴───┴──────────┴───┴───┘ |}];
   Low.Node.read_value low r |> [%sexp_of: int] |> print_s;
   [%expect {| 5 |}];
   (Low.Node.read_value low set_a) (fun _ -> 10);

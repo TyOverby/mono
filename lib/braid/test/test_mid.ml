@@ -274,8 +274,6 @@ let%expect_test "state" =
     │ 0 │   │ <empty> │ x │ 0 │
     │ 1 │   │ <empty> │ x │ 0 │
     │ 2 │   │ <empty> │ x │ 0 │
-    │ 3 │   │ <empty> │ x │ 0 │
-    │ 4 │   │ <empty> │ x │ 0 │
     └───┴───┴─────────┴───┴───┘ |}];
   Low.Node.incr_refcount low (lookup.f state);
   print_env low;
@@ -287,8 +285,6 @@ let%expect_test "state" =
     │ 0 │   │ <empty> │ x │ 1 │
     │ 1 │   │ <empty> │ x │ 1 │
     │ 2 │   │ <empty> │ x │ 0 │
-    │ 3 │   │ <empty> │ x │ 1 │
-    │ 4 │   │ <empty> │ x │ 1 │
     └───┴───┴─────────┴───┴───┘ |}];
   Low.stabilize low;
   print_env low;
@@ -300,8 +296,6 @@ let%expect_test "state" =
     │ 0 │   │ hello   │ - │ 1 │
     │ 1 │   │ hello   │ - │ 1 │
     │ 2 │   │ <empty> │ x │ 0 │
-    │ 3 │   │ false   │ - │ 1 │
-    │ 4 │   │ hello   │ - │ 1 │
     └───┴───┴─────────┴───┴───┘ |}];
   Low.Node.incr_refcount low (lookup.f set_state);
   Low.stabilize low;
@@ -311,11 +305,9 @@ let%expect_test "state" =
     ┌───┬───┬──────────┬───┬───┐
     │ # │ @ │ V        │ ? │ R │
     ├───┼───┼──────────┼───┼───┤
-    │ 0 │   │ hello    │ - │ 1 │
+    │ 0 │   │ hello    │ - │ 2 │
     │ 1 │   │ hello    │ - │ 1 │
     │ 2 │   │ <filled> │ - │ 1 │
-    │ 3 │   │ false    │ - │ 1 │
-    │ 4 │   │ hello    │ - │ 1 │
     └───┴───┴──────────┴───┴───┘ |}];
   let set = Low.Node.read_value low (lookup.f set_state) in
   set (fun prev ->
@@ -328,11 +320,9 @@ let%expect_test "state" =
     ┌───┬───┬──────────┬───┬───┐
     │ # │ @ │ V        │ ? │ R │
     ├───┼───┼──────────┼───┼───┤
-    │ 0 │   │ hello    │ - │ 1 │
-    │ 1 │   │ world    │ - │ 1 │
-    │ 2 │   │ <filled> │ - │ 1 │
-    │ 3 │   │ false    │ x │ 1 │
-    │ 4 │   │ hello    │ - │ 1 │
+    │ 0 │   │ world    │ - │ 2 │
+    │ 1 │   │ hello    │ x │ 1 │
+    │ 2 │   │ <filled> │ x │ 1 │
     └───┴───┴──────────┴───┴───┘ |}];
   Low.stabilize low;
   print_env low;
@@ -341,11 +331,9 @@ let%expect_test "state" =
     ┌───┬───┬──────────┬───┬───┐
     │ # │ @ │ V        │ ? │ R │
     ├───┼───┼──────────┼───┼───┤
-    │ 0 │   │ world    │ - │ 1 │
+    │ 0 │   │ world    │ - │ 2 │
     │ 1 │   │ world    │ - │ 1 │
     │ 2 │   │ <filled> │ - │ 1 │
-    │ 3 │   │ true     │ - │ 1 │
-    │ 4 │   │ world    │ - │ 1 │
     └───┴───┴──────────┴───┴───┘ |}];
   set (fun prev ->
       print_s [%message (prev : string)];
@@ -357,11 +345,9 @@ let%expect_test "state" =
     ┌───┬───┬───────────┬───┬───┐
     │ # │ @ │ V         │ ? │ R │
     ├───┼───┼───────────┼───┼───┤
-    │ 0 │   │ hey_there │ - │ 1 │
-    │ 1 │   │ world     │ - │ 1 │
-    │ 2 │   │ <filled>  │ - │ 1 │
-    │ 3 │   │ true      │ x │ 1 │
-    │ 4 │   │ world     │ - │ 1 │
+    │ 0 │   │ hey_there │ - │ 2 │
+    │ 1 │   │ world     │ x │ 1 │
+    │ 2 │   │ <filled>  │ x │ 1 │
     └───┴───┴───────────┴───┴───┘ |}];
   Low.stabilize low;
   print_env low;
@@ -370,11 +356,9 @@ let%expect_test "state" =
     ┌───┬───┬───────────┬───┬───┐
     │ # │ @ │ V         │ ? │ R │
     ├───┼───┼───────────┼───┼───┤
-    │ 0 │   │ hey_there │ - │ 1 │
+    │ 0 │   │ hey_there │ - │ 2 │
     │ 1 │   │ hey_there │ - │ 1 │
     │ 2 │   │ <filled>  │ - │ 1 │
-    │ 3 │   │ false     │ - │ 1 │
-    │ 4 │   │ hey_there │ - │ 1 │
     └───┴───┴───────────┴───┴───┘ |}];
   set (fun prev ->
       print_s [%message (prev : string)];
@@ -395,20 +379,16 @@ let%expect_test "state" =
     ┌───┬───┬───────────┬───┬───┐
     │ # │ @ │ V         │ ? │ R │
     ├───┼───┼───────────┼───┼───┤
-    │ 0 │   │ hey_there │ - │ 1 │
-    │ 1 │   │ z         │ - │ 1 │
-    │ 2 │   │ <filled>  │ - │ 1 │
-    │ 3 │   │ false     │ x │ 1 │
-    │ 4 │   │ hey_there │ - │ 1 │
+    │ 0 │   │ z         │ - │ 2 │
+    │ 1 │   │ hey_there │ x │ 1 │
+    │ 2 │   │ <filled>  │ x │ 1 │
     └───┴───┴───────────┴───┴───┘
 
     ┌───┬───┬──────────┬───┬───┐
     │ # │ @ │ V        │ ? │ R │
     ├───┼───┼──────────┼───┼───┤
-    │ 0 │   │ z        │ - │ 1 │
+    │ 0 │   │ z        │ - │ 2 │
     │ 1 │   │ z        │ - │ 1 │
     │ 2 │   │ <filled> │ - │ 1 │
-    │ 3 │   │ true     │ - │ 1 │
-    │ 4 │   │ z        │ - │ 1 │
     └───┴───┴──────────┴───┴───┘ |}]
 ;;
