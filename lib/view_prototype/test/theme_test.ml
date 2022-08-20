@@ -10,7 +10,7 @@ let%expect_test "default button" =
 
 let%expect_test "overridden button" =
   let theme =
-    View.Expert.override View.Expert.default_theme ~f:(fun (module T) ->
+    View.Expert.override_theme View.Expert.default_theme ~f:(fun (module T) ->
         (module struct
           class t =
             object

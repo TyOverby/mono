@@ -26,48 +26,21 @@ module Theme = struct
 
   type t = (module Impl_s)
 
-  let default : t =
-    let module M : Impl_s = struct
-      class t : Underlying.t =
-        object (self)
-          method background_color = "white"
-          method foreground_color = "black"
-
-          method button text ~on_click:() =
-            sprintf
-              "button: %s, foreground: %s, background: %s"
-              text
-              self#foreground_color
-              self#background_color
-        end
-
-      let t = new t
-    end
-    in
-    (module M)
-  ;;
-
   let override_constants (theme : t) ~(f : Constants.t -> Constants.t) : t =
     let module T = (val theme) in
-    let prev_constants =
-      { Constants.background_color = T.t#background_color
-      ; foreground_color = T.t#background_color
-      }
+    let prev_constants : Constants.t =
+      { background_color = T.t#background_color; foreground_color = T.t#background_color }
     in
     let { Constants.background_color; foreground_color } = f prev_constants in
-    let module M = struct
+    (module struct
       class t =
         object
           inherit T.t
           method! background_color = background_color
           method! foreground_color = foreground_color
         end
-    end
-    in
-    (module struct
-      include M
 
-      let t = new M.t
+      let t = new t
     end)
   ;;
 end
@@ -81,20 +54,37 @@ module Expert = struct
 
   type t = (module S)
 
-  let default_theme : Theme.t = Theme.default
-
-  let override (theme : Theme.t) ~(f : t -> t) : Theme.t =
-    let m =
-      f
-        (module struct
-          include (val theme)
-        end)
-    in
-    let module M = (val m) in
+  let make_theme (m : t) : Theme.t =
     (module struct
-      include M
+      include (val m)
 
-      let t = new M.t
+      let t = new t
     end)
+  ;;
+
+  let override_theme ((module M) : Theme.t) ~(f : t -> t) : Theme.t =
+    (module struct
+      include (val f (module M))
+
+      let t = new t
+    end)
+  ;;
+
+  let default_theme =
+    make_theme
+      (module struct
+        class t =
+          object (self)
+            method background_color = "white"
+            method foreground_color = "black"
+
+            method button text ~on_click:() =
+              sprintf
+                "button: %s, foreground: %s, background: %s"
+                text
+                self#foreground_color
+                self#background_color
+          end
+      end)
   ;;
 end

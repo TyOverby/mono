@@ -4,8 +4,6 @@ open! Import
 module type S = sig
   module Theme : T
 
-  val default_theme : Theme.t
-
   module type S = sig
     class t :
       object
@@ -15,5 +13,7 @@ module type S = sig
       end
   end
 
-  val override : Theme.t -> f:((module S) -> (module S)) -> Theme.t
+  val default_theme : Theme.t
+  val make_theme : (module S) -> Theme.t
+  val override_theme : Theme.t -> f:((module S) -> (module S)) -> Theme.t
 end
