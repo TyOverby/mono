@@ -1,0 +1,6 @@
+(library
+ (name view_p_test)
+ (inline_tests)
+ (libraries view_p core)
+ (library_flags -linkall)
+ (preprocess (pps ppx_jane)))

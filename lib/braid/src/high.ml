@@ -1,22 +1,55 @@
 open! Core
 
-module Name = struct
-  type 'a t = 'a Type_equal.Id.t
+module T : sig
+  module Name : sig
+    type +'a t
 
-  let create () = Type_equal.Id.create ~name:"" sexp_of_opaque
+    val create : unit -> 'a t
+  end
+
+  module Env : sig
+    type t
+
+    val empty : t
+    val set : t -> key:'a Name.t -> data:'a Mid.Node.t -> t
+    val find_exn : t -> 'a Name.t -> 'a Mid.Node.t
+  end
+end = struct
+  module Name' = struct
+    type 'a t = 'a Type_equal.Id.t
+
+    let create () = Type_equal.Id.create ~name:"" sexp_of_opaque
+  end
+
+  module Env' =
+    Univ_map.Make
+      (Univ_map.Type_id_key)
+      (struct
+        type 'a t = 'a Mid.Node.t
+
+        let sexp_of_t _ = sexp_of_opaque
+      end)
+
+  module Name = struct
+    type +'a t
+
+    let of_underlying : 'a Name'.t -> 'a t = Obj.magic
+    let to_underlying : 'a t -> 'a Name'.t = Obj.magic
+    let create () : 'a t = of_underlying (Name'.create ())
+  end
+
+  module Env = struct
+    include Env'
+
+    let set t ~key ~data = set t ~key:(Name.to_underlying key) ~data
+    let find_exn t key = find_exn t (Name.to_underlying key)
+  end
 end
 
-module Env =
-  Univ_map.Make
-    (Univ_map.Type_id_key)
-    (struct
-      type 'a t = 'a Mid.Node.t
-
-      let sexp_of_t _ = sexp_of_opaque
-    end)
+include T
 
 module Value = struct
-  type 'a t =
+  type +'a t =
     | Constant of 'a
     | Exception of exn
     | Name of 'a Name.t

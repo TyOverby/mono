@@ -1,5 +1,6 @@
 open! Core
 open! Braid.Private
+open Braid
 open Braid.Private.High.Let_syntax
 
 let print_env env = print_endline (Low.debug env)
@@ -161,4 +162,27 @@ let%expect_test "addition" =
   Low.stabilize low;
   Low.Node.read_value low r |> [%sexp_of: int] |> print_s;
   [%expect {| 40 |}]
+;;
+
+let%test_module "covariance" =
+  (module struct
+    let f : [< `A | `B | `E ] Value.t -> unit = fun _ -> ()
+    let g : [> `A ] Value.t -> unit = fun _ -> ()
+
+    let _ =
+      let%bind get, set = High.state `A in
+      let _get_cast = (get :> [ `A | `B | `C ] Value.t) in
+      let _set_cast = (set :> (([ `A | `B | `D ] -> [ `A | `B ]) -> unit) Value.t) in
+      let _auto_casted1 = f get in
+      let _auto_casted2 = g get in
+      return ()
+    ;;
+
+    let _ =
+      let%bind get, set = High.state None in
+      let _set_cast = (set :> (([ `A | `B ] option -> [ `A ] option) -> unit) Value.t) in
+      let _get_cast = (get :> [< `A | `B > `A ] option High.Value.t) in
+      return ()
+    ;;
+  end)
 ;;
