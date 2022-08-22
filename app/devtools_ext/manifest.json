@@ -1,0 +1,22 @@
+{
+  "name": "Page Redder",
+  "action": {},
+  "manifest_version": 3,
+  "version": "0.1",
+  "description": "Turns the page red when you click the icon",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "scripting"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "devtools_page": "devtools.html",
+  "host_permissions": [
+    "*://*/*"
+  ],
+  "optional_host_permissions": [
+    "*://*/*"
+  ]
+}
