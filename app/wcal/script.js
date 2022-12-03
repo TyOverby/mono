@@ -11,24 +11,28 @@ let days_of_the_week =
 "THU",
 "FRI",
 "SAT",
-"SUN"
+"SUN",
   ]
 
 let months = 
   [
-["JAN", "sky"],
-["FEB", "fuchsia"],
-["MAR", "indigo"],
-["APR", "red"],
-["MAY", "emerald"],
-["JUN", "cyan"],
-["JUL", "green"],
-["AUG", "teal"],
-["SEP", "yellow"],
-["OCT", "orange"],
-["NOV", "stone"],
-["DEC", "indigo"],
+["JAN", "sky", 1],
+["FEB", "fuchsia", 2],
+["MAR", "indigo", 3],
+["APR", "red", 4],
+["MAY", "emerald", 5],
+["JUN", "cyan", 6],
+["JUL", "red", 7],
+["AUG", "sky", 8],
+["SEP", "yellow", 9],
+["OCT", "orange", 10],
+["NOV", "stone", 11],
+["DEC", "sky", 12],
   ]
+
+function days_in_month(month) {
+  return new Date(2023, month, 0).getDate();
+}
 
 for (let label of days_of_the_week) {
   let day = (document.createElement("div"));
@@ -55,12 +59,33 @@ function make_new_month(month) {
   return event
 }
 
+for (let i = 0; i < 6; i ++ ) {
+  let day = document.createElement("div");
+    let color = months[0][1];
+  day.className = "day blank";
+  day.style.setProperty("--month-color-50", globalThis.colors[color]["50"])
+  for (let i = 1; i <= 9; i++) {
+    let ik = i * 100;
+    day.style.setProperty("--month-color-" + ik, globalThis.colors[color]["" + ik])
+  }
+  day_container.appendChild(day);
+}
 
-for (let [month, color] of months) {
-  for (let day_of_month = 1; day_of_month < (28 + Math.random() * 5); day_of_month++) {
+let seen = {};
+
+for (let [month, color, month_idx] of months) {
+  for (let day_of_month = 1; day_of_month < days_in_month(month_idx) + 1; day_of_month++) {
     let day = document.createElement("div");
-    day.className = "day";
+    let day_of_week = days_of_the_week[(new Date(2023, month_idx - 1, day_of_month).getDay() + 6) % 7];
+    day.className = `day ${day_of_week}`;
     day_container.appendChild(day);
+    //day.appendChild(new Text(day_of_week));
+
+    if (!seen[day_of_week]) { 
+        day.className += " first";
+    }
+    seen[day_of_week] = true;
+
 
 
     let day_label = document.createElement("div");
@@ -80,14 +105,13 @@ for (let [month, color] of months) {
     day_label.appendChild(document.createTextNode(day_of_month + ""));
     day.appendChild(day_label);
 
-    console.log(globalThis.colors[color]["50"]);
     day.style.setProperty("--month-color-50", globalThis.colors[color]["50"])
     for (let i = 1; i <= 9; i++) {
       let ik = i * 100;
       day.style.setProperty("--month-color-" + ik, globalThis.colors[color]["" + ik])
     }
 
-    if (Math.random() < 0.3) {
+    if (Math.random() < 0.0) {
       let event = make_event();
       day.appendChild(event);
 

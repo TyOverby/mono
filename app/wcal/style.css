@@ -4,6 +4,7 @@
   box-sizing: border-box;
 }
 
+
 :root {
   --day-min-width: 100px;
   --day-of-week-width: 2rem;
@@ -12,6 +13,7 @@
   --lighter-bg-color: #424242;
   --day-gap: 3px;
   --week-gap: 3px;
+  --border-radius:0;
 
   font-family: system-ui;
 }
@@ -19,25 +21,33 @@
 body {
   background: var(--bg-color);
   display:flex;
-  width:100vw;
   height:100vh;
-  max-width:100vw;
   max-height:100vh;
+
+  /*
+  width:100vw;
+  max-width:100vw;
+  */
+
   padding-top: var(--day-gap);
   padding-bottom: var(--day-gap);
+  padding-right: 1em;
 }
 
 #day-of-week-container {
   height: 100%;
   max-height: 100%;
-  display: grid;
 
+  display: grid;
   grid-template-rows: repeat(7, 1fr);
   grid-template-columns: var(--day-of-week-width);
   grid-auto-flow: column;
+  justify-content: center;
+  width: calc(100vh / 3);
 
   background: var(--bg-color);
   color: rgba(45, 45, 45, 1);
+  font-weight: bold;
 }
 
 #day-column {
@@ -51,15 +61,18 @@ body {
   max-height: 100%;
 
   display: grid;
-  grid-row-gap: var(--day-gap);
+  /*grid-row-gap: var(--day-gap);
   grid-column-gap: var(--week-gap);
+  */
   position:relative;
 
   grid-template-rows: repeat(7, 1fr);
+  grid-auto-flow: column;
+  /*
   grid-template-columns: repeat(auto-fit, calc((100vh / 7) - var(--day-gap) / (7 / 8)));
   grid-template-columns: repeat(auto-fit, minmax(calc((100vh / 7) - var(--day-gap) / (7 / 8)), 500px));
-  grid-auto-flow: column;
   grid-auto-columns: minmax(calc((100vh / 7) - var(--day-gap) / (7 / 8)), 500px);
+  */
   /* style */
 }
 
@@ -80,14 +93,18 @@ body {
   border:1px dashed var(--month-color-900);
   margin-bottom:0.3em;
   padding: 3px;
-  border-radius: 5px;
+  border-radius: var(--border-radius);
   background-color: white;
+}
+
+.day {
+  min-width: 5em;
 }
 
 .day, .day-of-month, 
 .day::-webkit-scrollbar-thumb
 {
-  border-radius: 4px;
+  border-radius: calc(var(--border-radius) - 1px);
 }
 
 .day {
@@ -95,8 +112,8 @@ body {
   padding: 5px;
   overflow-x: hidden;
   overflow-y: auto;
-  border: 1px solid var(--month-color-900);
-  box-shadow: 0 0 10px 1.5px var(--month-color-100);
+  border: 1px solid var(--month-color-300);
+  /*box-shadow: 0 0 10px 1.5px var(--month-color-100);*/
 }
 
 .day-of-month {
@@ -107,9 +124,12 @@ body {
   margin-top: -6px;
   top: -6px;
   position:sticky;
-  background: var(--month-color-300); 
-  color: white;
-  border: 1px solid var(--month-color-900); 
+  background: var(--month-color-200); 
+  background: white;
+  color: var(--month-color-800); ;
+  border: 2px solid var(--month-color-300); 
+  border-top:0;
+  border-right:0;
 
   float:right;
 
@@ -131,6 +151,8 @@ body {
   padding-left: 5px;
   border-bottom-left-radius: 0em;
   margin-bottom: 3px;
+  border-left: 0;
+  border-right: 0;
 }
 
 .day-label {
@@ -138,7 +160,7 @@ body {
   align-self: start;
   height:100%;
 
-  overflow:hidden;
+  /*overflow:hidden;*/
 
   writing-mode: vertical-rl;
   text-orientation: mixed;
@@ -149,6 +171,8 @@ body {
   display: flex; 
   justify-content: center; 
   align-items: center;
+
+  font-size: calc(100vh / (7 * 3));
 }
 
 
@@ -163,6 +187,7 @@ body {
   border-top-right-radius: 4px;
   border-bottom-right-radius: 4px;
 
+  /*
   background: var(--month-color-50);
   --month-color-50:white;
   background: 
@@ -171,9 +196,36 @@ body {
       var(--month-color-50) 5px, 
       var(--month-color-100) 5px, 
       var(--month-color-100) 10px);
+      */
 }
 
 /* Handle */
 .day::-webkit-scrollbar-thumb {
   background: transparent;
+}
+
+.day.blank {
+    background:unset;
+    border-width:0;
+    border-right-width:1px;
+}
+
+.day.blank {
+
+}
+
+.day.MON {
+    border-top-width: 2px;
+}
+
+.day.SUN {
+    border-bottom-width: 2px;
+}
+
+.day.blank:has(+ .SUN) {
+    border-bottom-width: 1px;
+}
+
+.day.SUN.first {
+    border-left-width: 2px;
 }
