@@ -22,6 +22,7 @@ $ eval ./scripts/env.sh
 $ nvim # or whatever editor you choose
 ```
 
+```
 ┌──────────────────────────────────────────────────┬────────────┬────────────┐
 │ Name                                             │   Time/Run │ Percentage │
 ├──────────────────────────────────────────────────┼────────────┼────────────┤
@@ -29,3 +30,4 @@ $ nvim # or whatever editor you choose
 │ [lib/braid/bench/benchmarks.ml] tree:incremental │ 8_078.81us │    100.00% │
 │ [lib/braid/bench/benchmarks.ml] tree:ocaml       │    71.41us │      0.88% │
 └──────────────────────────────────────────────────┴────────────┴────────────┘
+```
