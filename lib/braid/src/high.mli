@@ -27,7 +27,7 @@ val arr4
   -> f:('a -> 'b -> 'c -> 'd -> 'e)
   -> 'e Value.t t
 
-val if_ : bool Value.t -> then_:'a Value.t -> else_:'a Value.t -> 'a Value.t t
+val if_ : bool Value.t -> then_:'a Value.t t -> else_:'a Value.t t -> 'a Value.t t
 val bind : 'a t -> f:('a -> 'b t) -> 'b t
 val state : 'a -> ('a Value.t * (('a -> 'a) -> unit) Value.t) t
 

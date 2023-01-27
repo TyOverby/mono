@@ -70,7 +70,9 @@ val if_
   -> t
   -> bool Node.t
   -> then_:'a Node.t
+  -> then_effects:unit Node.t list
   -> else_:'a Node.t
+  -> else_effects:unit Node.t list
   -> t * 'a Node.t
 
 val state
@@ -86,6 +88,9 @@ val state'
   -> t
   -> init:'a Node.t
   -> t * 'a Node.t * (('a -> 'a) -> unit) Node.t
+
+val on_stabilization1 : t -> 'a Node.t -> f:('a -> unit) -> t * unit Node.t
+val on_stabilization0 : t -> f:(unit -> unit) -> t * unit Node.t
 
 module Expert : sig
   type lookup = { f : 'a. 'a Node.t -> 'a Low.Node.t }

@@ -120,81 +120,80 @@ module Arr = struct
   ;;
 
   let eval
-      : type a.
-        ?sexp_of:(a -> Sexp.t) -> Mid.t -> Env.t -> a t -> Mid.t * a Value_or_node.t
+    : type a. ?sexp_of:(a -> Sexp.t) -> Mid.t -> Env.t -> a t -> Mid.t * a Value_or_node.t
     =
    fun ?sexp_of mid env t ->
     match t with
     | Arr1 t ->
       (match t with
-      | { a = Constant a; f } -> mid, attempt (fun () -> f a)
-      | { a = Exception exn; _ } -> mid, Exception exn
-      | { a = Name a; f } ->
-        let n = Env.find_exn env a in
-        rewrap (Mid.map ?sexp_of mid n ~f))
+       | { a = Constant a; f } -> mid, attempt (fun () -> f a)
+       | { a = Exception exn; _ } -> mid, Exception exn
+       | { a = Name a; f } ->
+         let n = Env.find_exn env a in
+         rewrap (Mid.map ?sexp_of mid n ~f))
     | Arr2 t ->
       (match t with
-      | { a = Constant a; b = Constant b; f } -> mid, attempt (fun () -> f a b)
-      | { a = Exception exn; _ } -> mid, Exception exn
-      | { a = _; b = Exception exn; _ } -> mid, Exception exn
-      | { a = Constant a; b = Name b; f } ->
-        let b = Env.find_exn env b in
-        rewrap (Mid.map ?sexp_of mid b ~f:(fun b -> f a b))
-      | { a = Name a; b = Constant b; f } ->
-        let a = Env.find_exn env a in
-        rewrap (Mid.map ?sexp_of mid a ~f:(fun a -> f a b))
-      | { a = Name a; b = Name b; f } ->
-        let a = Env.find_exn env a in
-        let b = Env.find_exn env b in
-        rewrap (Mid.map2 ?sexp_of mid a b ~f))
+       | { a = Constant a; b = Constant b; f } -> mid, attempt (fun () -> f a b)
+       | { a = Exception exn; _ } -> mid, Exception exn
+       | { a = _; b = Exception exn; _ } -> mid, Exception exn
+       | { a = Constant a; b = Name b; f } ->
+         let b = Env.find_exn env b in
+         rewrap (Mid.map ?sexp_of mid b ~f:(fun b -> f a b))
+       | { a = Name a; b = Constant b; f } ->
+         let a = Env.find_exn env a in
+         rewrap (Mid.map ?sexp_of mid a ~f:(fun a -> f a b))
+       | { a = Name a; b = Name b; f } ->
+         let a = Env.find_exn env a in
+         let b = Env.find_exn env b in
+         rewrap (Mid.map2 ?sexp_of mid a b ~f))
     | Arr3 t ->
       (match t with
-      | { a = Constant a; b = Constant b; c = Constant c; f } ->
-        mid, attempt (fun () -> f a b c)
-      | { a = Exception exn; _ } -> mid, Exception exn
-      | { a = _; b = Exception exn; _ } -> mid, Exception exn
-      | { a = _; b = _; c = Exception exn; _ } -> mid, Exception exn
-      | { a = Name a; b = Name b; c = Name c; f } ->
-        let a = Env.find_exn env a in
-        let b = Env.find_exn env b in
-        let c = Env.find_exn env c in
-        rewrap (Mid.map3 ?sexp_of mid a b c ~f)
-      | { a = Constant a; b = Name b; c = Name c; f } ->
-        let b = Env.find_exn env b in
-        let c = Env.find_exn env c in
-        rewrap (Mid.map2 ?sexp_of mid b c ~f:(fun b c -> f a b c))
-      | { a = Name a; b = Constant b; c = Name c; f } ->
-        let a = Env.find_exn env a in
-        let c = Env.find_exn env c in
-        rewrap (Mid.map2 ?sexp_of mid a c ~f:(fun a c -> f a b c))
-      | { a = Name a; b = Name b; c = Constant c; f } ->
-        let a = Env.find_exn env a in
-        let b = Env.find_exn env b in
-        rewrap (Mid.map2 ?sexp_of mid a b ~f:(fun a b -> f a b c))
-      | { a = Name a; b = Constant b; c = Constant c; f } ->
-        let a = Env.find_exn env a in
-        rewrap (Mid.map ?sexp_of mid a ~f:(fun a -> f a b c))
-      | { a = Constant a; b = Name b; c = Constant c; f } ->
-        let b = Env.find_exn env b in
-        rewrap (Mid.map ?sexp_of mid b ~f:(fun b -> f a b c))
-      | { a = Constant a; b = Constant b; c = Name c; f } ->
-        let c = Env.find_exn env c in
-        rewrap (Mid.map ?sexp_of mid c ~f:(fun c -> f a b c)))
+       | { a = Constant a; b = Constant b; c = Constant c; f } ->
+         mid, attempt (fun () -> f a b c)
+       | { a = Exception exn; _ } -> mid, Exception exn
+       | { a = _; b = Exception exn; _ } -> mid, Exception exn
+       | { a = _; b = _; c = Exception exn; _ } -> mid, Exception exn
+       | { a = Name a; b = Name b; c = Name c; f } ->
+         let a = Env.find_exn env a in
+         let b = Env.find_exn env b in
+         let c = Env.find_exn env c in
+         rewrap (Mid.map3 ?sexp_of mid a b c ~f)
+       | { a = Constant a; b = Name b; c = Name c; f } ->
+         let b = Env.find_exn env b in
+         let c = Env.find_exn env c in
+         rewrap (Mid.map2 ?sexp_of mid b c ~f:(fun b c -> f a b c))
+       | { a = Name a; b = Constant b; c = Name c; f } ->
+         let a = Env.find_exn env a in
+         let c = Env.find_exn env c in
+         rewrap (Mid.map2 ?sexp_of mid a c ~f:(fun a c -> f a b c))
+       | { a = Name a; b = Name b; c = Constant c; f } ->
+         let a = Env.find_exn env a in
+         let b = Env.find_exn env b in
+         rewrap (Mid.map2 ?sexp_of mid a b ~f:(fun a b -> f a b c))
+       | { a = Name a; b = Constant b; c = Constant c; f } ->
+         let a = Env.find_exn env a in
+         rewrap (Mid.map ?sexp_of mid a ~f:(fun a -> f a b c))
+       | { a = Constant a; b = Name b; c = Constant c; f } ->
+         let b = Env.find_exn env b in
+         rewrap (Mid.map ?sexp_of mid b ~f:(fun b -> f a b c))
+       | { a = Constant a; b = Constant b; c = Name c; f } ->
+         let c = Env.find_exn env c in
+         rewrap (Mid.map ?sexp_of mid c ~f:(fun c -> f a b c)))
     | Arr4 t ->
       (match t with
-      | { a = Constant a; b = Constant b; c = Constant c; d = Constant d; f } ->
-        mid, attempt (fun () -> f a b c d)
-      | { a = Exception exn; _ } -> mid, Exception exn
-      | { a = _; b = Exception exn; _ } -> mid, Exception exn
-      | { a = _; b = _; c = Exception exn; _ } -> mid, Exception exn
-      | { a = _; b = _; c = _; d = Exception exn; _ } -> mid, Exception exn
-      | { a; b; c; d; f } ->
-        (* This is the point where ty gave up *)
-        let mid, a = to_node ~env mid a in
-        let mid, b = to_node ~env mid b in
-        let mid, c = to_node ~env mid c in
-        let mid, d = to_node ~env mid d in
-        rewrap (Mid.map4 ?sexp_of mid a b c d ~f))
+       | { a = Constant a; b = Constant b; c = Constant c; d = Constant d; f } ->
+         mid, attempt (fun () -> f a b c d)
+       | { a = Exception exn; _ } -> mid, Exception exn
+       | { a = _; b = Exception exn; _ } -> mid, Exception exn
+       | { a = _; b = _; c = Exception exn; _ } -> mid, Exception exn
+       | { a = _; b = _; c = _; d = Exception exn; _ } -> mid, Exception exn
+       | { a; b; c; d; f } ->
+         (* This is the point where ty gave up *)
+         let mid, a = to_node ~env mid a in
+         let mid, b = to_node ~env mid b in
+         let mid, c = to_node ~env mid c in
+         let mid, d = to_node ~env mid d in
+         rewrap (Mid.map4 ?sexp_of mid a b c d ~f))
  ;;
 end
 
@@ -211,8 +210,8 @@ type 'a t =
       -> 'b t
   | If :
       { cond : bool Value.t
-      ; then_ : 'a Value.t
-      ; else_ : 'a Value.t
+      ; then_ : 'a Value.t t
+      ; else_ : 'a Value.t t
       }
       -> 'a Value.t t
 
@@ -236,42 +235,54 @@ module Let_syntax = struct
   end
 end
 
-let rec lower : type a. Mid.t -> Env.t -> a t -> Mid.t * Env.t * a =
+type 'a ret =
+  { mid : Mid.t
+  ; env : Env.t
+  ; r : 'a
+  }
+
+let rec lower : type a. Mid.t -> Env.t -> a t -> a ret =
  fun mid env t ->
   match t with
-  | Return a -> mid, env, a
-  | Const a -> mid, env, Constant a
+  | Return a -> { mid; env; r = a }
+  | Const a -> { mid; env; r = Constant a }
   | Actually_const a ->
     let mid, node = Arr.to_node mid ~env (Constant a) in
     let name = Name.create () in
     let env = Env.set env ~key:name ~data:node in
-    mid, env, Name name
+    { mid; env; r = Name name }
   | Arr arr ->
     let mid, value_or_node = Arr.eval mid env arr in
     let value, env = Value_or_node.to_value env value_or_node in
-    mid, env, value
+    { mid; env; r = value }
   | State init ->
     let mid, cur, update = Mid.state mid ~init in
     let cur_name = Name.create () in
     let update_name = Name.create () in
     let env = Env.set env ~key:cur_name ~data:cur in
     let env = Env.set env ~key:update_name ~data:update in
-    mid, env, (Name cur_name, Name update_name)
+    { mid; env; r = Name cur_name, Name update_name }
   | If { cond; then_; else_ } ->
     (match cond with
-    | Value.Exception _ as exn -> mid, env, exn
-    | Value.Constant true -> mid, env, then_
-    | Constant false -> mid, env, else_
-    | cond ->
-      let mid, cond = Arr.to_node ~env mid cond in
-      let mid, then_ = Arr.to_node ~env mid then_ in
-      let mid, else_ = Arr.to_node ~env mid else_ in
-      let mid, res = Mid.if_ mid cond ~then_ ~else_ in
-      let name = Name.create () in
-      let env = Env.set env ~key:name ~data:res in
-      mid, env, Name name)
+     | Value.Exception _ as exn -> { mid; env; r = exn }
+     | Value.Constant true -> lower mid env then_
+     | Constant false -> lower mid env else_
+     | cond ->
+       let mid, cond = Arr.to_node ~env mid cond in
+       let env, (mid, then_) =
+         let { mid; env; r = then_ } = lower mid env then_ in
+         env, Arr.to_node ~env mid then_
+       in
+       let env, (mid, else_) =
+         let { mid; env; r = else_ } = lower mid env else_ in
+         env, Arr.to_node ~env mid else_
+       in
+       let mid, res = Mid.if_ mid cond ~then_ ~else_ ~then_effects:[] ~else_effects:[] in
+       let name = Name.create () in
+       let env = Env.set env ~key:name ~data:res in
+       { mid; env; r = Name name })
   | Bind { a; f } ->
-    let mid, env, r = lower mid env a in
+    let { mid; env; r } = lower mid env a in
     lower mid env (f r)
 ;;
 
@@ -283,7 +294,7 @@ module Expert = struct
   type lookup = { f : 'a. 'a Value.t -> 'a Value_or_node.t }
 
   let lower t =
-    let mid, env, r = lower t in
+    let { mid; env; r } = lower t in
     let lookup (type a) (v : a Value.t) : a Value_or_node.t =
       match v with
       | Constant c -> Constant c

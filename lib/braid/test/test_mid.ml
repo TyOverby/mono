@@ -36,9 +36,9 @@ let%expect_test "addition" =
       ~sexp_of:[%sexp_of: int]
       ~depends_on:[ T a; T b ]
       ~compute:(fun low lookup ~me:_ ->
-        let a_id = lookup.f a in
-        let b_id = lookup.f b in
-        fun () -> Low.Node.read_value low a_id + Low.Node.read_value low b_id)
+      let a_id = lookup.f a in
+      let b_id = lookup.f b in
+      fun () -> Low.Node.read_value low a_id + Low.Node.read_value low b_id)
   in
   let low, lookup = Mid.Expert.lower mid in
   print_env low;
@@ -101,38 +101,38 @@ let%expect_test "if" =
            ~depends_on:[ T cond ]
            ~priority:(Mid.Priority.reward Switch)
            ~compute:(fun low lookup ~me ->
-             let my_id = lookup.f me in
-             let a_id = lookup.f a in
-             let b_id = lookup.f b in
-             let cond_id = lookup.f cond in
-             let (lazy (_, _, switch_out)) = mid__switch_in__switch_out in
-             let switch_out_id = lookup.f switch_out in
-             fun () ->
-               let incr_a () = Low.Node.incr_refcount low a_id in
-               let incr_b () = Low.Node.incr_refcount low b_id in
-               let decr_a () = Low.Node.decr_refcount low a_id in
-               let decr_b () = Low.Node.decr_refcount low b_id in
-               let mark_switch_out_dirty () = Low.Node.mark_dirty low switch_out_id in
-               let i_have_value () = Low.Node.has_value low my_id in
-               let my_previous_value () = Low.Node.read_value low my_id in
-               let cond_value () = Low.Node.read_value low cond_id in
-               let prev = if i_have_value () then my_previous_value () else -1 in
-               let next = cond_value () in
-               if prev = next
-               then ()
-               else (
-                 (match prev with
-                 | -1 -> ()
-                 | 0 -> decr_a ()
-                 | 1 -> decr_b ()
-                 | _ -> assert false);
-                 (match next with
-                 | -1 -> ()
-                 | 0 -> incr_a ()
-                 | 1 -> incr_b ()
-                 | _ -> assert false);
-                 mark_switch_out_dirty ());
-               next)
+           let my_id = lookup.f me in
+           let a_id = lookup.f a in
+           let b_id = lookup.f b in
+           let cond_id = lookup.f cond in
+           let (lazy (_, _, switch_out)) = mid__switch_in__switch_out in
+           let switch_out_id = lookup.f switch_out in
+           fun () ->
+             let incr_a () = Low.Node.incr_refcount low a_id in
+             let incr_b () = Low.Node.incr_refcount low b_id in
+             let decr_a () = Low.Node.decr_refcount low a_id in
+             let decr_b () = Low.Node.decr_refcount low b_id in
+             let mark_switch_out_dirty () = Low.Node.mark_dirty low switch_out_id in
+             let i_have_value () = Low.Node.has_value low my_id in
+             let my_previous_value () = Low.Node.read_value low my_id in
+             let cond_value () = Low.Node.read_value low cond_id in
+             let prev = if i_have_value () then my_previous_value () else -1 in
+             let next = cond_value () in
+             if prev = next
+             then ()
+             else (
+               (match prev with
+                | -1 -> ()
+                | 0 -> decr_a ()
+                | 1 -> decr_b ()
+                | _ -> assert false);
+               (match next with
+                | -1 -> ()
+                | 0 -> incr_a ()
+                | 1 -> incr_b ()
+                | _ -> assert false);
+               mark_switch_out_dirty ());
+             next)
        in
        let mid, switch_out =
          Mid.Expert.add
@@ -142,14 +142,14 @@ let%expect_test "if" =
            ~depends_on:[ T switch_in ]
            ~priority:(Mid.Priority.punish Switch)
            ~compute:(fun low lookup ~me:_ ->
-             let a_id = lookup.f a in
-             let b_id = lookup.f b in
-             let in_id = lookup.f switch_in in
-             fun () ->
-               match Low.Node.read_value low in_id with
-               | 0 -> Low.Node.read_value low a_id
-               | 1 -> Low.Node.read_value low b_id
-               | _ -> assert false)
+           let a_id = lookup.f a in
+           let b_id = lookup.f b in
+           let in_id = lookup.f switch_in in
+           fun () ->
+             match Low.Node.read_value low in_id with
+             | 0 -> Low.Node.read_value low a_id
+             | 1 -> Low.Node.read_value low b_id
+             | _ -> assert false)
        in
        mid, switch_in, switch_out)
   in
@@ -213,7 +213,7 @@ let%expect_test "pretty if" =
   let mid, a' = Mid.map mid ~name:"a'" ~sexp_of:[%sexp_of: int] a ~f:(fun a -> a + 1) in
   let mid, b = Mid.const mid ~name:"b" ~sexp_of:[%sexp_of: int] 5 in
   let mid, b' = Mid.map mid ~name:"b'" ~sexp_of:[%sexp_of: int] b ~f:(fun a -> a + 1) in
-  let mid, out = Mid.if_ mid cond ~then_:a' ~else_:b' in
+  let mid, out = Mid.if_ mid cond ~then_:a' ~else_:b' ~then_effects:[] ~else_effects:[] in
   let low, lookup = Mid.Expert.lower mid in
   print_env low;
   [%expect
@@ -311,8 +311,8 @@ let%expect_test "state" =
     └───┴───┴──────────┴───┴───┘ |}];
   let set = Low.Node.read_value low (lookup.f set_state) in
   set (fun prev ->
-      print_s [%message (prev : string)];
-      "world");
+    print_s [%message (prev : string)];
+    "world");
   print_env low;
   [%expect
     {|
@@ -336,8 +336,8 @@ let%expect_test "state" =
     │ 2 │   │ <filled> │ - │ 1 │
     └───┴───┴──────────┴───┴───┘ |}];
   set (fun prev ->
-      print_s [%message (prev : string)];
-      "hey_there");
+    print_s [%message (prev : string)];
+    "hey_there");
   print_env low;
   [%expect
     {|
@@ -361,18 +361,19 @@ let%expect_test "state" =
     │ 2 │   │ <filled>  │ - │ 1 │
     └───┴───┴───────────┴───┴───┘ |}];
   set (fun prev ->
-      print_s [%message (prev : string)];
-      "x");
+    print_s [%message (prev : string)];
+    "x");
   set (fun prev ->
-      print_s [%message (prev : string)];
-      "y");
+    print_s [%message (prev : string)];
+    "y");
   set (fun prev ->
-      print_s [%message (prev : string)];
-      "z");
+    print_s [%message (prev : string)];
+    "z");
   print_env low;
   Low.stabilize low;
   print_env low;
-  [%expect {|
+  [%expect
+    {|
     (prev hey_there)
     (prev x)
     (prev y)
@@ -391,4 +392,120 @@ let%expect_test "state" =
     │ 1 │   │ z        │ - │ 1 │
     │ 2 │   │ <filled> │ - │ 1 │
     └───┴───┴──────────┴───┴───┘ |}]
+;;
+
+let%expect_test "always-recompute" =
+  let mid = Mid.empty in
+  let mid, a =
+    Mid.Expert.add
+      mid
+      ~name:"a"
+      ~sexp_of:[%sexp_of: unit]
+      ~depends_on:[]
+      ~compute:(fun low { f = lookup } ~me ->
+      let me = lookup me in
+      fun () ->
+        print_endline "here";
+        Low.Node.mark_dirty low me)
+  in
+  let low, lookup = Mid.Expert.lower mid in
+  print_env low;
+  [%expect
+    {|
+    ┌───┬───┬─────────┬───┬───┐
+    │ # │ @ │ V       │ ? │ R │
+    ├───┼───┼─────────┼───┼───┤
+    │ 0 │ a │ <empty> │ x │ 0 │
+    └───┴───┴─────────┴───┴───┘ |}];
+  Low.Node.incr_refcount low (lookup.f a);
+  Low.stabilize low;
+  Low.stabilize low;
+  print_env low;
+  [%expect
+    {|
+    here
+    here
+    ┌───┬───┬────┬───┬───┐
+    │ # │ @ │ V  │ ? │ R │
+    ├───┼───┼────┼───┼───┤
+    │ 0 │ a │ () │ x │ 1 │
+    └───┴───┴────┴───┴───┘ |}]
+;;
+
+let%expect_test "on_stabilization" =
+  let mid = Mid.empty in
+  let mid, unit = Mid.const mid ~sexp_of:sexp_of_unit () in
+  let mid, a = Mid.on_stabilization1 mid unit ~f:(fun () -> print_endline "here") in
+  let low, lookup = Mid.Expert.lower mid in
+  print_env low;
+  [%expect
+    {|
+    ┌───┬──────────────────┬─────────┬───┬───┐
+    │ # │ @                │ V       │ ? │ R │
+    ├───┼──────────────────┼─────────┼───┼───┤
+    │ 0 │                  │ <empty> │ x │ 0 │
+    │ 1 │ on_stabilization │ <empty> │ x │ 0 │
+    └───┴──────────────────┴─────────┴───┴───┘ |}];
+  Low.Node.incr_refcount low (lookup.f a);
+  Low.stabilize low;
+  Low.stabilize low;
+  print_env low;
+  [%expect
+    {|
+    here
+    here
+    ┌───┬──────────────────┬────┬───┬───┐
+    │ # │ @                │ V  │ ? │ R │
+    ├───┼──────────────────┼────┼───┼───┤
+    │ 0 │                  │ () │ - │ 1 │
+    │ 1 │ on_stabilization │ () │ x │ 1 │
+    └───┴──────────────────┴────┴───┴───┘ |}]
+;;
+
+let%expect_test "on_stabilization not run with refcount 0" =
+  let mid = Mid.empty in
+  let mid, unit = Mid.const mid ~sexp_of:sexp_of_unit () in
+  let mid, _ = Mid.on_stabilization1 mid unit ~f:(fun () -> print_endline "here") in
+  let low, _ = Mid.Expert.lower mid in
+  print_env low;
+  [%expect
+    {|
+    ┌───┬──────────────────┬─────────┬───┬───┐
+    │ # │ @                │ V       │ ? │ R │
+    ├───┼──────────────────┼─────────┼───┼───┤
+    │ 0 │                  │ <empty> │ x │ 0 │
+    │ 1 │ on_stabilization │ <empty> │ x │ 0 │
+    └───┴──────────────────┴─────────┴───┴───┘ |}];
+  Low.stabilize low;
+  print_env low;
+  [%expect
+    {|
+    ┌───┬──────────────────┬─────────┬───┬───┐
+    │ # │ @                │ V       │ ? │ R │
+    ├───┼──────────────────┼─────────┼───┼───┤
+    │ 0 │                  │ <empty> │ x │ 0 │
+    │ 1 │ on_stabilization │ <empty> │ x │ 0 │
+    └───┴──────────────────┴─────────┴───┴───┘ |}]
+;;
+
+let%expect_test "on_stabilization in an if" =
+  let mid = Mid.empty in
+  let mid, cond = Mid.const mid ~name:"cond" ~sexp_of:[%sexp_of: bool] true in
+  let mid, a = Mid.on_stabilization0 mid ~f:(fun () -> print_endline "then") in
+  let mid, b = Mid.on_stabilization0 mid ~f:(fun () -> print_endline "else") in
+  let mid, out = Mid.if_ mid cond ~then_:a ~else_:b ~then_effects:[] ~else_effects:[] in
+  let low, lookup = Mid.Expert.lower mid in
+  let set_cond = Low.Node.write_value low (lookup.f cond) in
+  Low.Node.incr_refcount low (lookup.f out);
+  Low.stabilize low;
+  Low.stabilize low;
+  [%expect {|
+    then
+    then |}];
+  set_cond false;
+  Low.stabilize low;
+  Low.stabilize low;
+  [%expect {|
+    else
+    else |}]
 ;;

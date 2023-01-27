@@ -38,8 +38,8 @@ let%expect_test "addition" =
 let%expect_test "if" =
   let t =
     let%bind cond = High.const_node true in
-    let%bind a = High.const_node 2 in
-    let%bind b = High.const_node 3 in
+    let a = High.const_node 2 in
+    let b = High.const_node 3 in
     High.if_ cond ~then_:a ~else_:b
   in
   let mid, mid_lookup, r = High.Expert.lower t in
@@ -71,8 +71,8 @@ let%expect_test "if" =
 let%expect_test "if with a constant" =
   let t =
     let%bind cond = High.const true in
-    let%bind a = High.const_node 2 in
-    let%bind b = High.const_node 3 in
+    let a = High.const_node 2 in
+    let b = High.const_node 3 in
     High.if_ cond ~then_:a ~else_:b
   in
   let mid, mid_lookup, r = High.Expert.lower t in
@@ -92,7 +92,6 @@ let%expect_test "if with a constant" =
     │ # │ @ │ V        │ ? │ R │
     ├───┼───┼──────────┼───┼───┤
     │ 0 │   │ <filled> │ - │ 1 │
-    │ 1 │   │ <empty>  │ x │ 0 │
     └───┴───┴──────────┴───┴───┘ |}];
   Low.Node.read_value low r_low |> [%sexp_of: int] |> print_s;
   [%expect {| 2 |}]
@@ -105,8 +104,8 @@ let%expect_test "constant prop" =
   in
   let _mid, mid_lookup, r = High.Expert.lower t in
   (match mid_lookup.f r with
-  | Constant i -> print_s [%message (i : int)]
-  | _ -> assert false);
+   | Constant i -> print_s [%message (i : int)]
+   | _ -> assert false);
   [%expect {| (i 3) |}]
 ;;
 

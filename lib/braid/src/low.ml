@@ -87,30 +87,19 @@ module Info = struct
 
   (* getters *)
   let is_dirty t = int_to_bool ((t lsr 0) land 1) (*[@@inline always]*)
-
   let has_value t = int_to_bool ((t lsr 1) land 1) (*[@@inline always]*)
-
   let has_cutoff t = int_to_bool ((t lsr 3) land 1) (*[@@inline always]*)
-
   let refcount t = t lsr 4 (*[@@inline always]*)
-
   let is_referenced t = refcount t <> 0 (*[@@inline always]*)
-
   let isn't_referenced t = refcount t = 0 (*[@@inline always]*)
-
   let refcount_is_one t = refcount t = 1 (*[@@inline always]*)
-
   let _has_value_and_cutoff t = t land 0b1010 = 0b1010
 
   (* setters *)
   let set_dirty t = t lor 1 (*[@@inline always]*)
-
   let set_clean t = t land lnot (1 lsl 0) (*[@@inline always]*)
-
   let set_has_value t = t lor (1 lsl 1) (*[@@inline always]*)
-
   let set_has_cutoff t = t lor (1 lsl 3) (*[@@inline always]*)
-
   let init = set_dirty 0
   let incr_refcount t = t + (1 lsl 4) (*[@@inline always]*)
 
@@ -162,24 +151,24 @@ let next_id t =
 ;;
 
 let prepare
-    (type a)
-    env
-    ?(sexp_of : (a -> Sexp.t) option)
-    ?name
-    ~(compute : unit -> a)
-    ~(depends_on : Node0.packed array)
-    ~(depended_on_by : Node0.packed array)
-    (id : a Node0.t)
+  (type a)
+  env
+  ?(sexp_of : (a -> Sexp.t) option)
+  ?name
+  ~(compute : unit -> a)
+  ~(depends_on : Node0.packed array)
+  ~(depended_on_by : Node0.packed array)
+  (id : a Node0.t)
   =
   let id = (id :> int) in
   (match env.builder with
-  | None -> failwith "Low.prepare called after finalization"
-  | Some b ->
-    let depends_on = Core.Array.map depends_on ~f:(fun (Node0.T t) -> Node0.to_int t) in
-    let depended_on_by =
-      Core.Array.map depended_on_by ~f:(fun (Node0.T t) -> Node0.to_int t)
-    in
-    Info_arr.Builder.add b (id :> int) ~depends_on ~depended_on_by);
+   | None -> failwith "Low.prepare called after finalization"
+   | Some b ->
+     let depends_on = Core.Array.map depends_on ~f:(fun (Node0.T t) -> Node0.to_int t) in
+     let depended_on_by =
+       Core.Array.map depended_on_by ~f:(fun (Node0.T t) -> Node0.to_int t)
+     in
+     Info_arr.Builder.add b (id :> int) ~depends_on ~depended_on_by);
   Obj_array.set_some env.computes id (Obj.repr compute);
   Array.set env.sexp_ofs id (Option.map sexp_of ~f:Obj.magic);
   Array.set env.names id name
@@ -209,8 +198,8 @@ let sexp_of_t t =
       | true ->
         let value = Obj_array.get_some t.values i in
         (match Array.get t.sexp_ofs i with
-        | Some sexp_of -> Obj.magic sexp_of value
-        | None -> Sexp.Atom "<filled>")
+         | Some sexp_of -> Obj.magic sexp_of value
+         | None -> Sexp.Atom "<filled>")
     in
     let dirty =
       match Info.is_dirty info with
@@ -250,28 +239,28 @@ let debug t =
   in
   let refcount_column =
     Ascii_table_kernel.Column.create ~align:Right "R" (fun { refcount; _ } ->
-        Int.to_string refcount)
+      Int.to_string refcount)
   in
   let ts =
     List.init t.length ~f:(fun i ->
-        let name =
-          match Array.get t.names i with
-          | None -> ""
-          | Some name -> name
-        in
-        let info = Info_arr.info t.info_arr i in
-        let value =
-          match Info.has_value info with
-          | false -> Sexp.Atom "<empty>"
-          | true ->
-            let value = Obj_array.get_some t.values i in
-            (match Array.get t.sexp_ofs i with
-            | Some sexp_of -> Obj.magic sexp_of value
-            | None -> Sexp.Atom "<filled>")
-        in
-        let value = Sexp.to_string_hum value in
-        let dirty, refcount = Info.(is_dirty info, refcount info) in
-        { i; name; value; dirty; refcount })
+      let name =
+        match Array.get t.names i with
+        | None -> ""
+        | Some name -> name
+      in
+      let info = Info_arr.info t.info_arr i in
+      let value =
+        match Info.has_value info with
+        | false -> Sexp.Atom "<empty>"
+        | true ->
+          let value = Obj_array.get_some t.values i in
+          (match Array.get t.sexp_ofs i with
+           | Some sexp_of -> Obj.magic sexp_of value
+           | None -> Sexp.Atom "<filled>")
+      in
+      let value = Sexp.to_string_hum value in
+      let dirty, refcount = Info.(is_dirty info, refcount info) in
+      { i; name; value; dirty; refcount })
   in
   match
     Ascii_table_kernel.draw
@@ -364,10 +353,10 @@ module Node = struct
   (*[@@inline always]*)
 
   let write_value_without_cutoff_or_propagating_dirtyness
-      (type a)
-      values
-      (id : a t)
-      (new_ : a)
+    (type a)
+    values
+    (id : a t)
+    (new_ : a)
     =
     let id = (id :> int) in
     Obj_array.set_some_assuming_currently_int values id (Obj.repr new_)
@@ -376,13 +365,13 @@ module Node = struct
   (*[@@inline always]*)
 
   let write_value_with_cutoff
-      (type a)
-      env
-      values
-      info_arr
-      depended_on
-      (id : a t)
-      (new_ : a)
+    (type a)
+    env
+    values
+    info_arr
+    depended_on
+    (id : a t)
+    (new_ : a)
     =
     let id = (id :> int) in
     let cutoff =
@@ -397,12 +386,12 @@ module Node = struct
   ;;
 
   let write_value_with_phys_equal
-      (type a)
-      values
-      info_arr
-      depended_on
-      (id : a t)
-      (new_ : a)
+    (type a)
+    values
+    info_arr
+    depended_on
+    (id : a t)
+    (new_ : a)
     =
     let id = (id :> int) in
     let old = Obj_array.get_some values id |> (Obj.magic : Obj.t -> a) in
@@ -422,8 +411,8 @@ module Node = struct
     | false -> write_value_without_cutoff_or_propagating_dirtyness values id new_
     | true ->
       (match has_cutoff with
-      | true -> write_value_with_cutoff env values info_arr depended_on id new_
-      | false -> write_value_with_phys_equal values info_arr depended_on id new_)
+       | true -> write_value_with_cutoff env values info_arr depended_on id new_
+       | false -> write_value_with_phys_equal values info_arr depended_on id new_)
   ;;
 
   (*[@@inline always]*)
@@ -457,9 +446,19 @@ let stabilize env =
     let info = Info_arr.info info_arr i in
     if Bool.Non_short_circuiting.(Info.is_dirty info && Info.is_referenced info)
     then (
+      let () =
+        (* set clean before compute so that the compute 
+           function can unset it if it wants *)
+        let new_info = Info.set_clean info in
+        Info_arr.set_info info_arr i new_info
+      in
       Node.recompute env values info_arr depended_on ~info (Node.of_int i);
-      let new_info = info |> Info.set_clean |> Info.set_has_value in
-      Info_arr.set_info info_arr i new_info)
+      let () =
+        let info = Info_arr.info info_arr i in
+        let new_info = Info.set_has_value info in
+        Info_arr.set_info info_arr i new_info
+      in
+      ())
   done
 ;;
 

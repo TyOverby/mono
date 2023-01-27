@@ -1,6 +1,6 @@
 open! Core
 open! Braid
-open Braid.Let_syntax
+open! Braid.Let_syntax
 open Common
 
 let single_addition =
