@@ -30,7 +30,7 @@ end
 module Node : sig
   type env := t
   type 'a t [@@immediate]
-  type packed = T : 'a t -> packed [@@unboxed]
+  type packed = T : 'a t -> packed [@@unboxed] [@@immediate]
 
   val incr_refcount : env -> _ t -> unit [@@inline always]
   val decr_refcount : env -> _ t -> unit [@@inline always]

@@ -14,8 +14,11 @@ module type Universe =
   Braid_intf.Universe with module Value := Value with module Var := Var
 
 let compile t =
-  let mid, mid_lookup, res = High.Expert.lower t in
+  let mid, mid_lookup, eff, res = High.Expert.lower t in
   let low, low_lookup = Mid.Expert.lower mid in
+  List.iter eff ~f:(fun (T node) ->
+    let node = low_lookup.f node in
+    Low.Node.incr_refcount low node);
   let m =
     (module struct
       let is_computed v_high =
@@ -34,9 +37,9 @@ let compile t =
         | Node v_mid ->
           let v_low = low_lookup.f v_mid in
           stage (fun () ->
-              if Low.Node.has_value low v_low
-              then Low.Node.read_value low v_low
-              else failwith "value not yet comptued")
+            if Low.Node.has_value low v_low
+            then Low.Node.read_value low v_low
+            else failwith "value not yet comptued")
         | Constant v -> stage (fun () -> v)
         | Exception e -> stage (fun () -> raise e)
       ;;

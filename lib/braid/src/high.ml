@@ -200,6 +200,8 @@ end
 type 'a t =
   | Return : 'a -> 'a t
   | Const : 'a -> 'a Value.t t
+  | On_stabilization0 : (unit -> unit) -> unit t
+  | Effect : _ Value.t -> unit t
   | Actually_const : 'a -> 'a Value.t t
   | Arr : 'r Arr.t -> 'r Value.t t
   | State : 's -> ('s Value.t * (('s -> 's) -> unit) Value.t) t
@@ -217,6 +219,8 @@ type 'a t =
 
 let return a = Return a
 let const a = Const a
+let register_effect a = Effect a
+let on_stabilization0 f = On_stabilization0 f
 let const_node a = Actually_const a
 let arr1 a ~f = Arr (Arr1 { a; f })
 let arr2 a b ~f = Arr (Arr2 { a; b; f })
@@ -238,52 +242,65 @@ end
 type 'a ret =
   { mid : Mid.t
   ; env : Env.t
+  ; eff : Mid.Node.Packed.t list
   ; r : 'a
   }
 
 let rec lower : type a. Mid.t -> Env.t -> a t -> a ret =
  fun mid env t ->
   match t with
-  | Return a -> { mid; env; r = a }
-  | Const a -> { mid; env; r = Constant a }
+  | Return a -> { mid; env; eff = []; r = a }
+  | Const a -> { mid; env; eff = []; r = Constant a }
   | Actually_const a ->
     let mid, node = Arr.to_node mid ~env (Constant a) in
     let name = Name.create () in
     let env = Env.set env ~key:name ~data:node in
-    { mid; env; r = Name name }
+    { mid; env; eff = []; r = Name name }
   | Arr arr ->
     let mid, value_or_node = Arr.eval mid env arr in
     let value, env = Value_or_node.to_value env value_or_node in
-    { mid; env; r = value }
+    { mid; env; eff = []; r = value }
   | State init ->
     let mid, cur, update = Mid.state mid ~init in
     let cur_name = Name.create () in
     let update_name = Name.create () in
     let env = Env.set env ~key:cur_name ~data:cur in
     let env = Env.set env ~key:update_name ~data:update in
-    { mid; env; r = Name cur_name, Name update_name }
+    { mid; env; eff = []; r = Name cur_name, Name update_name }
   | If { cond; then_; else_ } ->
-    (match cond with
-     | Value.Exception _ as exn -> { mid; env; r = exn }
-     | Value.Constant true -> lower mid env then_
+    (match (cond : _ Value.t) with
+     | Exception _ as exn -> { mid; env; eff = []; r = exn }
+     | Constant true -> lower mid env then_
      | Constant false -> lower mid env else_
      | cond ->
        let mid, cond = Arr.to_node ~env mid cond in
-       let env, (mid, then_) =
-         let { mid; env; r = then_ } = lower mid env then_ in
-         env, Arr.to_node ~env mid then_
+       let env, (mid, then_), then_effects =
+         let { mid; env; eff; r = then_ } = lower mid env then_ in
+         env, Arr.to_node ~env mid then_, eff
        in
-       let env, (mid, else_) =
-         let { mid; env; r = else_ } = lower mid env else_ in
-         env, Arr.to_node ~env mid else_
+       let env, (mid, else_), else_effects =
+         let { mid; env; eff; r = else_ } = lower mid env else_ in
+         env, Arr.to_node ~env mid else_, eff
        in
-       let mid, res = Mid.if_ mid cond ~then_ ~else_ ~then_effects:[] ~else_effects:[] in
+       let mid, res = Mid.if_ mid cond ~then_ ~else_ ~then_effects ~else_effects in
+       let eff =
+         match then_effects, else_effects with
+         | [], [] -> []
+         | _ -> [ Mid.Node.Packed.T res ]
+       in
        let name = Name.create () in
        let env = Env.set env ~key:name ~data:res in
-       { mid; env; r = Name name })
+       { mid; env; eff; r = Name name })
+  | On_stabilization0 f ->
+    let mid, e = Mid.on_stabilization0 mid ~f in
+    { mid; env; eff = [ T e ]; r = () }
+  | Effect e ->
+    let mid, e = Arr.to_node mid ~env e in
+    { mid; env; eff = [ T e ]; r = () }
   | Bind { a; f } ->
-    let { mid; env; r } = lower mid env a in
-    lower mid env (f r)
+    let { mid; env; eff = eff1; r } = lower mid env a in
+    let { mid; env; eff = eff2; r } = lower mid env (f r) in
+    { mid; env; eff = eff1 @ eff2; r }
 ;;
 
 let lower t = lower Mid.empty Env.empty t
@@ -294,13 +311,13 @@ module Expert = struct
   type lookup = { f : 'a. 'a Value.t -> 'a Value_or_node.t }
 
   let lower t =
-    let { mid; env; r } = lower t in
+    let { mid; env; eff; r } = lower t in
     let lookup (type a) (v : a Value.t) : a Value_or_node.t =
       match v with
       | Constant c -> Constant c
       | Exception exn -> Exception exn
       | Name name -> Node (Env.find_exn env name)
     in
-    mid, { f = lookup }, r
+    mid, { f = lookup }, eff, r
   ;;
 end

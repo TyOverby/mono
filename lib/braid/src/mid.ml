@@ -67,8 +67,17 @@ module Node = struct
       let sexp_of_t (T t) = sexp_of_t sexp_of_opaque t
 
       let compare (T a) (T b) =
+        let bad_ids () =
+          raise_s
+            [%message
+              "bad type ids"
+                (a.id : Id.t)
+                (b.id : Id.t)
+                (a.name : string option)
+                (b.name : string option)]
+        in
         let r = compare_int a.id b.id in
-        if r = 0 then assert (Type_equal.Id.same a.type_id b.type_id);
+        if r = 0 then if not (Type_equal.Id.same a.type_id b.type_id) then bad_ids ();
         r
       ;;
     end
@@ -322,20 +331,15 @@ let if_ ?sexp_of t cond ~then_:a ~then_effects ~else_:b ~else_effects =
   let sexp_of_out =
     Option.first_some sexp_of (Option.first_some a.Node.sexp_of b.Node.sexp_of)
   in
-  let make_phantom ~name eff =
+  let make_phantom t ~name eff =
     match eff with
     | [] -> t, None
     | l ->
-      let t, node =
-        add
-          t
-          ~depends_on:(List.map l ~f:(fun n -> Node.Packed.T n))
-          ~compute:(fun _ _ ~me:_ () -> ())
-      in
+      let t, node = add t ~name ~depends_on:l ~compute:(fun _ _ ~me:_ () -> ()) in
       t, Some node
   in
-  let t, phantom_then = make_phantom then_effects ~name:"phantom-then" in
-  let t, phantom_else = make_phantom else_effects ~name:"phantom-else" in
+  let t, phantom_then = make_phantom t then_effects ~name:"phantom-then" in
+  let t, phantom_else = make_phantom t else_effects ~name:"phantom-else" in
   let t, _, if_out =
     add2
       t

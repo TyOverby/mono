@@ -9,6 +9,14 @@ type 'a t
 val return : 'a -> 'a t
 val const : 'a -> 'a Value.t t
 val const_node : 'a -> 'a Value.t t
+
+(** edge triggering *)
+
+val register_effect : 'a Value.t -> unit t
+val on_stabilization0 : (unit -> unit) -> unit t
+
+(** value transformation *)
+
 val arr1 : 'a Value.t -> f:('a -> 'b) -> 'b Value.t t
 val arr2 : 'a Value.t -> 'b Value.t -> f:('a -> 'b -> 'c) -> 'c Value.t t
 
@@ -50,5 +58,5 @@ module Expert : sig
 
   type lookup = { f : 'a. 'a Value.t -> 'a Value_or_node.t }
 
-  val lower : 'a t -> Mid.t * lookup * 'a
+  val lower : 'a t -> Mid.t * lookup * Mid.Node.Packed.t list * 'a
 end

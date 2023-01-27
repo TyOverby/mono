@@ -11,7 +11,7 @@ let%expect_test "addition" =
     let%bind b = High.const_node 3 in
     High.arr2 a b ~f:( + )
   in
-  let mid, mid_lookup, r = High.Expert.lower t in
+  let mid, mid_lookup, _eff, r = High.Expert.lower t in
   let low, low_lookup = Mid.Expert.lower mid in
   let r_mid =
     match mid_lookup.f r with
@@ -42,7 +42,7 @@ let%expect_test "if" =
     let b = High.const_node 3 in
     High.if_ cond ~then_:a ~else_:b
   in
-  let mid, mid_lookup, r = High.Expert.lower t in
+  let mid, mid_lookup, _eff, r = High.Expert.lower t in
   let low, low_lookup = Mid.Expert.lower mid in
   let r_mid =
     match mid_lookup.f r with
@@ -75,7 +75,7 @@ let%expect_test "if with a constant" =
     let b = High.const_node 3 in
     High.if_ cond ~then_:a ~else_:b
   in
-  let mid, mid_lookup, r = High.Expert.lower t in
+  let mid, mid_lookup, _eff, r = High.Expert.lower t in
   let low, low_lookup = Mid.Expert.lower mid in
   let r_mid =
     match mid_lookup.f r with
@@ -102,7 +102,7 @@ let%expect_test "constant prop" =
     let%bind a = High.const 2 in
     High.arr1 a ~f:(fun a -> a + 1)
   in
-  let _mid, mid_lookup, r = High.Expert.lower t in
+  let _mid, mid_lookup, _eff, r = High.Expert.lower t in
   (match mid_lookup.f r with
    | Constant i -> print_s [%message (i : int)]
    | _ -> assert false);
@@ -116,7 +116,7 @@ let%expect_test "addition" =
     let%bind res = High.arr2 a b ~f:( + ) in
     return (res, set_a, set_b)
   in
-  let mid, mid_lookup, (r, set_a, set_b) = High.Expert.lower t in
+  let mid, mid_lookup, _eff, (r, set_a, set_b) = High.Expert.lower t in
   let low, low_lookup = Mid.Expert.lower mid in
   let r =
     match mid_lookup.f r with
@@ -184,4 +184,73 @@ let%test_module "covariance" =
       return ()
     ;;
   end)
+;;
+
+let%expect_test "side-effect inside an if" =
+  let t =
+    let%bind cond, set_cond = High.state true in
+    let%bind res =
+      High.if_
+        cond
+        ~then_:
+          (let%bind () = High.on_stabilization0 (fun () -> print_endline "hello") in
+           High.const_node 2)
+        ~else_:(High.const 3)
+    in
+    High.arr2 res set_cond ~f:Tuple2.create
+  in
+  let mid, mid_lookup, _eff, r = High.Expert.lower t in
+  let low, low_lookup = Mid.Expert.lower mid in
+  let r_mid =
+    match mid_lookup.f r with
+    | Node n -> n
+    | _ -> assert false
+  in
+  let r_low = low_lookup.f r_mid in
+  Low.Node.incr_refcount low r_low;
+  Low.stabilize low;
+  Low.Node.read_value low r_low |> fst |> [%sexp_of: int] |> print_s;
+  [%expect {|
+    hello
+    2 |}];
+  Low.stabilize low;
+  [%expect {| hello |}];
+  let _, setter = Low.Node.read_value low r_low in
+  setter (Fn.const false);
+  Low.stabilize low;
+  [%expect {| |}]
+;;
+
+let%expect_test "top-level side-effect" =
+  let t = High.on_stabilization0 (fun () -> print_endline "hello") in
+  let mid, _mid_lookup, eff, _r = High.Expert.lower t in
+  let low, low_lookup = Mid.Expert.lower mid in
+  assert (List.length eff = 1);
+  List.iter eff ~f:(fun (T node) ->
+    let node = low_lookup.f node in
+    Low.Node.incr_refcount low node);
+  Low.stabilize low;
+  [%expect {| hello |}]
+;;
+
+let%expect_test "top-level side-effect inside an ignored if" =
+  let t =
+    let%bind cond, set_cond = High.state true in
+    let%bind _ =
+      High.if_
+        cond
+        ~then_:
+          (let%bind () = High.on_stabilization0 (fun () -> print_endline "hello") in
+           const ())
+        ~else_:(const ())
+    in
+    return set_cond
+  in
+  let mid, _mid_lookup, eff, _r = High.Expert.lower t in
+  let low, low_lookup = Mid.Expert.lower mid in
+  List.iter eff ~f:(fun (T node) ->
+    let node = low_lookup.f node in
+    Low.Node.incr_refcount low node);
+  Low.stabilize low;
+  [%expect {| hello |}]
 ;;

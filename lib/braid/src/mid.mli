@@ -70,9 +70,9 @@ val if_
   -> t
   -> bool Node.t
   -> then_:'a Node.t
-  -> then_effects:unit Node.t list
+  -> then_effects:Node.Packed.t list
   -> else_:'a Node.t
-  -> else_effects:unit Node.t list
+  -> else_effects:Node.Packed.t list
   -> t * 'a Node.t
 
 val state
