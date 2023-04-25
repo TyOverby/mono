@@ -126,7 +126,8 @@ let rec propagate_priorities (t : t) (T node : Node.Packed.t) ~priority =
   then
     Map.find t.depends_on (T node)
     |> Option.value ~default:Node.Packed.Set.empty
-    |> Set.fold ~init:t ~f:(propagate_priorities ~priority:subsequent_priorities)
+    |> Set.fold ~init:t ~f:(fun t node ->
+      propagate_priorities t node ~priority:subsequent_priorities)
   else t
 ;;
 

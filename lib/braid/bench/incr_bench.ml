@@ -1,6 +1,6 @@
 open! Core
 open! Incremental
-open Incremental.Let_syntax
+open! Incremental.Let_syntax
 open Common
 
 type ('i, 'r) f =

@@ -1,10 +1,13 @@
+open! Core
+open Safety
+
 type int16_array =
   ( int
   , Stdlib.Bigarray.int16_unsigned_elt
   , Stdlib.Bigarray.c_layout )
   Stdlib.Bigarray.Array1.t
 
-let new_int16_array length : int16_array =
+let _new_int16_array length : int16_array =
   Stdlib.Bigarray.(Array1.create int16_unsigned c_layout length)
 ;;
 
@@ -14,24 +17,38 @@ type depends_on_idx = int
 type depended_on_by = int Array.t
 type depended_on_by_idx = int
 
-let uint_32_max = Core.Int.pow 2 32 - 1
-let info info i = Array.unsafe_get info ((i * 2) + 0)
-let set_info info i v = Array.unsafe_set info ((i * 2) + 0) v
-let depends_on_idx info i = Array.unsafe_get info ((i * 2) + 1) lsr 32
-let depended_on_by_idx info i = Array.unsafe_get info ((i * 2) + 1) land uint_32_max
-let depends_on_length depends_on idx = Array.unsafe_get depends_on idx
-let get_depends_on depends_on idx offset = Array.unsafe_get depends_on (idx + offset + 1)
-let depended_on_by_length depended_on_by idx = Array.unsafe_get depended_on_by idx
+let uint_32_max = Int.pow 2 32 - 1
+let[@inline always] info info i = Array.get info ((i * 2) + 0)
 
-let get_depended_on_by depended_on_by idx offset =
+let[@inline always] set_info (info : int array) (i : int) (v : int) =
+  Stdlib.Array.unsafe_set info (i * 2) v
+;;
+
+(* Array.set info ((i * 2) + 0) v *)
+
+let[@inline always] depends_on_idx info i = Array.get info ((i * 2) + 1) lsr 32
+
+let[@inline always] depended_on_by_idx info i =
+  Array.get info ((i * 2) + 1) land uint_32_max
+;;
+
+let[@inline always] depends_on_length depends_on idx = Array.get depends_on idx
+
+let[@inline always] get_depends_on depends_on idx offset =
+  Array.get depends_on (idx + offset + 1)
+;;
+
+let[@inline always] depended_on_by_length depended_on_by idx =
+  Array.get depended_on_by idx
+;;
+
+let[@inline always] get_depended_on_by depended_on_by idx offset =
   Array.get depended_on_by (idx + offset + 1)
 ;;
 
 module Builder = struct
-  open Core
-
   type t =
-    { mutable nodes : (int Array.t * int Array.t) Core.Int.Map.t
+    { mutable nodes : (int Array.t * int Array.t) Int.Map.t
     ; mutable count : int
     ; info_init : int
     }
@@ -39,13 +56,13 @@ module Builder = struct
   let create info_init = { nodes = Int.Map.empty; count = 0; info_init }
 
   let add t id ~depends_on ~depended_on_by =
-    let depends_on = depends_on in
-    let depended_on_by = depended_on_by in
-    t.nodes <- Int.Map.add_exn t.nodes ~key:id ~data:(depends_on, depended_on_by);
+    let depends_on = Array.of_array depends_on in
+    let depended_on_by = Array.of_array depended_on_by in
+    t.nodes <- Map.add_exn t.nodes ~key:id ~data:(depends_on, depended_on_by);
     t.count <- t.count + 1
   ;;
 
-  let uint_16_max = Int.pow 2 16 - 1
+  let _uint_16_max = Int.pow 2 16 - 1
 
   let finalize t =
     (* todo: assert that all nodes have been prepared *)
@@ -66,18 +83,8 @@ module Builder = struct
         Array.set info ((i * 2) + 1) ((!a_idx lsl 32) + !b_idx);
         Array.set a_arr !a_idx (Array.length a);
         Array.set b_arr !b_idx (Array.length b);
-        Array.blit
-          ~src:a
-          ~src_pos:0
-          ~dst:a_arr
-          ~dst_pos:(!a_idx + 1)
-          ~len:(Array.length a);
-        Array.blit
-          ~src:b
-          ~src_pos:0
-          ~dst:b_arr
-          ~dst_pos:(!b_idx + 1)
-          ~len:(Array.length b);
+      Array.blit ~src:a ~src_pos:0 ~dst:a_arr ~dst_pos:(!a_idx + 1) ~len:(Array.length a);
+      Array.blit ~src:b ~src_pos:0 ~dst:b_arr ~dst_pos:(!b_idx + 1) ~len:(Array.length b);
         a_idx := !a_idx + 1 + Array.length a;
         b_idx := !b_idx + 1 + Array.length b;
         ());

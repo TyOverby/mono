@@ -9,7 +9,6 @@ module Common = struct
     let of_array = Fn.id
     let create = Array.create
     let init = Array.init
-    let iter = Array.iter
     let blit = Array.blit
   end
 end
@@ -18,26 +17,31 @@ module Unsafe = struct
   module Obj_array = struct
     type t = Obj.t Uniform_array.t
 
-    let init_empty len = Uniform_array.create_obj_array ~len
-    let get_some = Uniform_array.unsafe_get
-    let set_some = Uniform_array.unsafe_set_omit_phys_equal_check
+    let[@inline always] init_empty len = Uniform_array.create_obj_array ~len
+    let[@inline always] get_some arr i = Uniform_array.unsafe_get arr i
 
-    let set_some_int_assuming_currently_int t i v =
+    let[@inline always] set_some arr i v =
+      Uniform_array.unsafe_set_omit_phys_equal_check arr i v
+    ;;
+
+    let[@inline always] set_some_int_assuming_currently_int t i v =
       Uniform_array.unsafe_set_int_assuming_currently_int t i (Obj.magic v : int)
     ;;
 
-    let set_some_assuming_currently_int t i v =
+    let[@inline always] set_some_assuming_currently_int t i v =
       Uniform_array.unsafe_set_assuming_currently_int t i v
     ;;
 
-    let set_some_int t i v = Uniform_array.unsafe_set_int t i (Obj.magic v : int)
+    let[@inline always] set_some_int t i v =
+      Uniform_array.unsafe_set_int t i (Obj.magic v : int)
+    ;;
   end
 
   module Array = struct
     include Common.Array
 
-    let set = Array.unsafe_set
-    let get = Array.unsafe_get
+    let[@inline always] get arr i = Stdlib.Array.unsafe_get arr i
+    let[@inline always] set arr i v = Stdlib.Array.unsafe_set arr i v
   end
 end
 

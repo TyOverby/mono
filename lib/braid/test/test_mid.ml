@@ -116,6 +116,7 @@ let%expect_test "if" =
                let i_have_value () = Low.Node.has_value low my_id in
                let my_previous_value () = Low.Node.read_value low my_id in
                let cond_value () = Low.Node.read_value low cond_id in
+               (* *)
                let prev = if i_have_value () then my_previous_value () else -1 in
                let next = cond_value () in
                if prev = next
@@ -214,6 +215,7 @@ let%expect_test "pretty if" =
   let mid, b = Mid.const mid ~name:"b" ~sexp_of:[%sexp_of: int] 5 in
   let mid, b' = Mid.map mid ~name:"b'" ~sexp_of:[%sexp_of: int] b ~f:(fun a -> a + 1) in
   let mid, out = Mid.if_ mid cond ~then_:a' ~else_:b' in
+  (* *)
   let low, lookup = Mid.Expert.lower mid in
   print_env low;
   [%expect

@@ -32,13 +32,13 @@ module Node : sig
   type 'a t [@@immediate]
   type packed = T : 'a t -> packed [@@unboxed]
 
-  val incr_refcount : env -> _ t -> unit [@@inline always]
-  val decr_refcount : env -> _ t -> unit [@@inline always]
-  val is_dirty : env -> _ t -> bool [@@inline always]
-  val mark_dirty : env -> _ t -> unit [@@inline always]
-  val has_value : env -> _ t -> bool [@@inline always]
-  val read_value : env -> 'a t -> 'a [@@inline always]
-  val write_value : env -> 'a t -> 'a -> unit [@@inline always]
+  val incr_refcount : env -> _ t -> unit
+  val decr_refcount : env -> _ t -> unit
+  val is_dirty : env -> _ t -> bool
+  val mark_dirty : env -> _ t -> unit
+  val has_value : env -> _ t -> bool
+  val read_value : env -> 'a t -> 'a
+  val write_value : env -> 'a t -> 'a -> unit
 end
 
 val create : length:int -> t

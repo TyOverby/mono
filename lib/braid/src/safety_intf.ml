@@ -13,7 +13,7 @@ module type S = sig
   end
 
   module Array : sig
-    type 'a t [@@deriving sexp_of]
+    type 'a t = 'a array [@@deriving sexp_of]
 
     val empty : 'a t
     val of_array : 'a array -> 'a t
