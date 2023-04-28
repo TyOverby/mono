@@ -447,8 +447,8 @@ let stabilize env =
     if Bool.Non_short_circuiting.(Info.is_dirty info && Info.is_referenced info)
     then (
       let () =
-        (* set clean before compute so that the compute 
-           function can unset it if it wants *)
+        (* set clean before running the compute function so that the compute 
+           function can mark itself dirty it if it wants to *)
         let new_info = Info.set_clean info in
         Info_arr.set_info info_arr i new_info
       in

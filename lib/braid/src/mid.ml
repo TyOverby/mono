@@ -16,6 +16,7 @@ module Priority = struct
     let by_id = compare_int a_id b_id in
     let by_iter = compare_int a_iter b_iter in
     match a, b with
+    | Immediately, Immediately -> 0
     | Immediately, _ -> -1
     | _, Immediately -> 1
     | Reward ak, Reward bk ->
@@ -32,6 +33,8 @@ module Priority = struct
     | Neutral _, Reward _ -> 1
     | Neutral _, Punish _ -> -1
   ;;
+
+  (* TODO: quickcheck this *)
 
   let neutral = Neutral 0
   let reward kind = Reward kind
